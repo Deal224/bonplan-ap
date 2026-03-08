@@ -12,8 +12,8 @@ export default function AuthPage() {
   const { state, dispatch } = useApp();
   const T = useLang(state.lang);
   const toast = useToast();
-  const [mode, setMode] = useState('login'); // login | register
-  const [step, setStep] = useState(1); // 1: phone, 2: pin
+  const [mode, setMode] = useState('login');
+  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ phone: '', pin: '', name: '' });
   const [error, setError] = useState('');
@@ -21,33 +21,19 @@ export default function AuthPage() {
   const handleNext = async () => {
     setError('');
     if (step === 1) {
-      if (!form.phone || form.phone.length < 8) {
-        setError(T('phoneInvalid'));
-        return;
-      }
-      if (mode === 'register' && !form.name.trim()) {
-        setError(T('fillFields'));
-        return;
-      }
+      if (!form.phone || form.phone.length < 8) { setError(T('phoneInvalid')); return; }
+      if (mode === 'register' && !form.name.trim()) { setError(T('fillFields')); return; }
       setStep(2);
       return;
     }
-
-    if (form.pin.length !== 4) {
-      setError(T('pinLength'));
-      return;
-    }
-
+    if (form.pin.length !== 4) { setError(T('pinLength')); return; }
     setLoading(true);
     try {
-      let res;
-      if (mode === 'login') {
-        res = await api.login({ phone: form.phone, pin: form.pin });
-      } else {
-        res = await api.register({ phone: form.phone, pin: form.pin, name: form.name });
-      }
+      const res = mode === 'login'
+        ? await api.login({ phone: form.phone, pin: form.pin })
+        : await api.register({ phone: form.phone, pin: form.pin, name: form.name });
       dispatch({ type: 'SET_AUTH', token: res.token, user: res.user });
-      toast.success(mode === 'login' ? 'Bienvenue ! 👋' : 'Compte créé avec succès !');
+      toast.success(mode === 'login' ? 'Bienvenue ! 👋' : 'Compte créé ! 🎉');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -55,21 +41,17 @@ export default function AuthPage() {
     }
   };
 
-  const reset = () => {
-    setStep(1);
-    setForm({ phone: '', pin: '', name: '' });
-    setError('');
-  };
+  const reset = () => { setStep(1); setForm({ phone: '', pin: '', name: '' }); setError(''); };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1A3C6E] via-[#1e4a87] to-[#0f2548] flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-[#1A4731] via-[#1e5c35] to-[#0f2f1a] flex flex-col items-center justify-center p-6">
       {/* Logo */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-8"
       >
-        <div className="w-20 h-20 rounded-3xl bg-white/20 backdrop-blur flex items-center justify-center mx-auto mb-4 shadow-xl">
+        <div className="w-20 h-20 rounded-3xl bg-[#FFBE00] flex items-center justify-center mx-auto mb-4 shadow-xl">
           <span className="text-4xl">💰</span>
         </div>
         <h1 className="text-4xl font-bold text-white tracking-tight">{T('welcome')}</h1>
@@ -83,7 +65,7 @@ export default function AuthPage() {
         transition={{ delay: 0.1 }}
         className="w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden"
       >
-        {/* Tab switcher */}
+        {/* Tabs */}
         <div className="flex border-b border-slate-100">
           {['login', 'register'].map(m => (
             <button
@@ -91,7 +73,7 @@ export default function AuthPage() {
               onClick={() => { setMode(m); reset(); }}
               className={`flex-1 py-4 text-sm font-semibold transition-colors cursor-pointer ${
                 mode === m
-                  ? 'text-[#1A3C6E] border-b-2 border-[#1A3C6E]'
+                  ? 'text-[#1A4731] border-b-2 border-[#FFBE00]'
                   : 'text-slate-400 hover:text-slate-600'
               }`}
             >
@@ -101,14 +83,12 @@ export default function AuthPage() {
         </div>
 
         <div className="p-6">
-          {/* Step indicator */}
+          {/* Step progress */}
           <div className="flex items-center gap-2 mb-6">
             {[1, 2].map(s => (
               <div
                 key={s}
-                className={`h-1 rounded-full transition-all ${
-                  s <= step ? 'bg-[#1A3C6E]' : 'bg-slate-200'
-                } ${s === 1 ? 'flex-1' : 'flex-1'}`}
+                className={`h-1 flex-1 rounded-full transition-all ${s <= step ? 'bg-[#FFBE00]' : 'bg-slate-200'}`}
               />
             ))}
           </div>
@@ -122,8 +102,8 @@ export default function AuthPage() {
                 exit={{ opacity: 0, x: -20 }}
                 className="flex flex-col gap-4"
               >
-                <h2 className="text-xl font-bold text-slate-900">
-                  {mode === 'login' ? 'Bon retour !' : 'Créer un compte'}
+                <h2 className="text-xl font-bold text-[#1A4731]">
+                  {mode === 'login' ? T('welcomeBack') : T('createAccount')}
                 </h2>
                 {mode === 'register' && (
                   <Input
@@ -150,18 +130,14 @@ export default function AuthPage() {
                 exit={{ opacity: 0, x: -20 }}
                 className="flex flex-col items-center gap-4"
               >
-                <h2 className="text-xl font-bold text-slate-900 self-start">
+                <h2 className="text-xl font-bold text-[#1A4731] self-start">
                   {mode === 'login' ? 'Entrez votre PIN' : 'Choisissez un PIN'}
                 </h2>
                 <p className="text-sm text-slate-400 self-start">
-                  {mode === 'login' ? `Pour ${form.phone}` : '4 chiffres pour sécuriser votre compte'}
+                  {mode === 'login' ? `${T('pinFor')} ${form.phone}` : T('choosePinDesc')}
                 </p>
                 <div className="pt-2">
-                  <PinInput
-                    value={form.pin}
-                    onChange={pin => setForm(f => ({ ...f, pin }))}
-                    secret
-                  />
+                  <PinInput value={form.pin} onChange={pin => setForm(f => ({ ...f, pin }))} secret />
                 </div>
               </motion.div>
             )}

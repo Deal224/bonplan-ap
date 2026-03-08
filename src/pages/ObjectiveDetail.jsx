@@ -33,10 +33,7 @@ export default function ObjectiveDetail() {
   async function loadData() {
     setLoading(true);
     try {
-      const [objRes, txRes] = await Promise.all([
-        api.getObjective(id),
-        api.getTransactions(id),
-      ]);
+      const [objRes, txRes] = await Promise.all([api.getObjective(id), api.getTransactions(id)]);
       setObjective(objRes.objective);
       setStats(objRes.stats);
       setTransactions(txRes.transactions || []);
@@ -48,38 +45,27 @@ export default function ObjectiveDetail() {
     }
   }
 
-  // Route correcte : POST /api/transactions/:id/deposit → { amount: int, note?: string }
   async function handleDeposit() {
     const amt = parseInt(depositForm.amount, 10);
-    if (!depositForm.amount || amt < 1000) {
-      toast.error(T('minAmount'));
-      return;
-    }
+    if (!depositForm.amount || amt < 1000) { toast.error(T('minAmount')); return; }
     setActionLoading(true);
     try {
       const res = await api.deposit(id, amt, depositForm.note);
-      const msg = res.milestone_reached?.reached
-        ? res.milestone_reached.message
-        : res.message || T('paymentSuccess');
+      const msg = res.milestone_reached?.reached ? res.milestone_reached.message : res.message || T('paymentSuccess');
       toast.success(msg);
       setDepositModal(false);
       setDepositForm({ amount: '', note: '' });
       await loadData();
     } catch (err) {
-      console.error('[Deposit error]', err);
       toast.error(err.message);
     } finally {
       setActionLoading(false);
     }
   }
 
-  // Route correcte : POST /api/transactions/:id/withdraw → { amount: int, note?: string }
   async function handleWithdraw() {
     const amt = parseInt(withdrawForm.amount, 10);
-    if (!withdrawForm.amount || amt < 1) {
-      toast.error(T('fillFields'));
-      return;
-    }
+    if (!withdrawForm.amount || amt < 1) { toast.error(T('fillFields')); return; }
     setActionLoading(true);
     try {
       const res = await api.withdraw(id, amt, withdrawForm.note);
@@ -87,17 +73,11 @@ export default function ObjectiveDetail() {
         toast.success(res.message);
         await loadData();
       } else {
-        // Retrait refusé par les règles métier (résistance comptabilisée)
-        if (res.is_resistance) {
-          toast.success(`💪 ${res.message}`);
-        } else {
-          toast.error(res.message);
-        }
+        res.is_resistance ? toast.success(`💪 ${res.message}`) : toast.error(res.message);
       }
       setWithdrawModal(false);
       setWithdrawForm({ amount: '', note: '' });
     } catch (err) {
-      console.error('[Withdraw error]', err);
       toast.error(err.message);
     } finally {
       setActionLoading(false);
@@ -153,20 +133,16 @@ export default function ObjectiveDetail() {
       <div className="flex items-center gap-3">
         <button
           onClick={() => navigate('/')}
-          className="w-10 h-10 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 cursor-pointer shadow-sm"
+          className="w-10 h-10 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-[#1A4731] dark:text-slate-300 hover:bg-[#FFF8E1] dark:hover:bg-slate-600 cursor-pointer shadow-sm"
         >
           ←
         </button>
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <h1 className="text-xl font-bold text-[#1A4731] dark:text-white flex items-center gap-2">
             {objective.emoji} {objective.name}
           </h1>
           <p className="text-slate-400 text-sm">
-            {objective.status === 'closed'
-              ? T('closed')
-              : completed
-              ? T('objectiveReached')
-              : `${days} ${T('daysLeft')}`}
+            {objective.status === 'closed' ? T('closed') : completed ? T('objectiveReached') : `${days} ${T('daysLeft')}`}
           </p>
         </div>
         {objective.status !== 'closed' && (
@@ -181,8 +157,8 @@ export default function ObjectiveDetail() {
         )}
       </div>
 
-      {/* Main card */}
-      <div className="bg-gradient-to-br from-[#1A3C6E] to-[#0f2548] rounded-3xl p-6 text-white relative overflow-hidden">
+      {/* Main card — gradient vert */}
+      <div className="bg-gradient-to-br from-[#1A4731] to-[#0f2f1a] rounded-3xl p-6 text-white relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-white/5 -translate-y-8 translate-x-8" />
         <div className="relative">
           <p className="text-white/60 text-sm mb-1">{T('currentBalance')}</p>
@@ -200,10 +176,9 @@ export default function ObjectiveDetail() {
               initial={{ width: 0 }}
               animate={{ width: `${pct}%` }}
               transition={{ duration: 1, ease: 'easeOut' }}
-              className={`h-full rounded-full ${completed ? 'bg-emerald-400' : 'bg-white'}`}
+              className={`h-full rounded-full ${completed ? 'bg-[#FFBE00]' : 'bg-white'}`}
             />
           </div>
-
           <div className="flex justify-between text-xs text-white/50 mt-1">
             <span>{formatAmount(objective.current_balance)} {T('gnf')}</span>
             <span>{formatAmount(objective.target_amount)} {T('gnf')}</span>
@@ -227,15 +202,13 @@ export default function ObjectiveDetail() {
       </div>
 
       {/* Lock info */}
-      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl px-4 py-3 flex items-center gap-3">
+      <div className="bg-[#FFF8E1] dark:bg-yellow-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl px-4 py-3 flex items-center gap-3">
         <span className="text-xl">🔒</span>
         <div>
-          <p className="text-amber-800 dark:text-amber-400 text-sm font-medium">
-            {stats?.is_locked
-              ? `${T('lockedUntil')} ${formatDate(objective.lock_date)}`
-              : T('unlocked')}
+          <p className="text-[#1A4731] dark:text-amber-400 text-sm font-medium">
+            {stats?.is_locked ? `${T('lockedUntil')} ${formatDate(objective.lock_date)}` : T('unlocked')}
           </p>
-          <p className="text-amber-600 dark:text-amber-500 text-xs">
+          <p className="text-[#1A4731]/60 dark:text-amber-500 text-xs">
             {T('ruleLabel')} : {getRuleLabel(objective.rule)}
           </p>
         </div>
@@ -244,18 +217,14 @@ export default function ObjectiveDetail() {
       {/* Action buttons */}
       {objective.status !== 'closed' && (
         <div className="grid grid-cols-2 gap-3">
-          <Button onClick={() => setDepositModal(true)} className="py-4">
-            ↑ {T('deposit')}
-          </Button>
-          <Button variant="secondary" onClick={() => setWithdrawModal(true)} className="py-4">
-            ↓ {T('withdraw')}
-          </Button>
+          <Button onClick={() => setDepositModal(true)} className="py-4">↑ {T('deposit')}</Button>
+          <Button variant="secondary" onClick={() => setWithdrawModal(true)} className="py-4">↓ {T('withdraw')}</Button>
         </div>
       )}
 
       {/* Transactions */}
       <div>
-        <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-3">{T('transactions')}</h2>
+        <h2 className="text-lg font-bold text-[#1A4731] dark:text-white mb-3">{T('transactions')}</h2>
         {transactions.length === 0 ? (
           <div className="text-center py-8 text-slate-400">
             <p className="text-3xl mb-2">📋</p>
@@ -272,18 +241,18 @@ export default function ObjectiveDetail() {
                 className="flex items-center gap-3 bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700"
               >
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${
-                  tx.type === 'deposit' ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-red-100 dark:bg-red-900/40'
+                  tx.type === 'deposit' ? 'bg-[#FFF8E1] text-[#1A4731]' : 'bg-red-100 dark:bg-red-900/40 text-red-500'
                 }`}>
                   {tx.type === 'deposit' ? '↑' : '↓'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm text-slate-900 dark:text-white truncate">
+                  <p className="font-semibold text-sm text-[#1A4731] dark:text-white truncate">
                     {tx.type === 'deposit' ? T('deposit_tx') : T('withdrawal_tx')}
                     {tx.note && <span className="text-slate-400 font-normal ml-1">— {tx.note}</span>}
                   </p>
                   <p className="text-xs text-slate-400">{formatDate(tx.created_at)}</p>
                 </div>
-                <p className={`font-bold text-sm ${tx.type === 'deposit' ? 'text-emerald-600' : 'text-red-500'}`}>
+                <p className={`font-bold text-sm ${tx.type === 'deposit' ? 'text-[#2E7D52]' : 'text-red-500'}`}>
                   {tx.type === 'deposit' ? '+' : '-'}{formatAmount(tx.amount)} {T('gnf')}
                 </p>
               </motion.div>
@@ -295,32 +264,12 @@ export default function ObjectiveDetail() {
       {/* Deposit Modal */}
       <Modal open={depositModal} onClose={() => setDepositModal(false)} title={T('deposit')}>
         <div className="flex flex-col gap-4">
-          <Input
-            label={T('amountLabel')}
-            type="number"
-            value={depositForm.amount}
-            onChange={e => setDepositForm(f => ({ ...f, amount: e.target.value }))}
-            placeholder="10 000"
-            suffix={T('gnf')}
-          />
-          {remaining > 0 && (
-            <p className="text-xs text-slate-400">
-              {T('remainingLabel')} : {formatAmount(remaining)} {T('gnf')}
-            </p>
-          )}
-          <Input
-            label={T('note')}
-            value={depositForm.note}
-            onChange={e => setDepositForm(f => ({ ...f, note: e.target.value }))}
-            placeholder="Ex: salaire du mois..."
-          />
+          <Input label={T('amountLabel')} type="number" value={depositForm.amount} onChange={e => setDepositForm(f => ({ ...f, amount: e.target.value }))} placeholder="10 000" suffix={T('gnf')} />
+          {remaining > 0 && <p className="text-xs text-slate-400">{T('remainingLabel')} : {formatAmount(remaining)} {T('gnf')}</p>}
+          <Input label={T('note')} value={depositForm.note} onChange={e => setDepositForm(f => ({ ...f, note: e.target.value }))} placeholder="Ex: salaire du mois..." />
           <div className="flex gap-3 pt-2">
-            <Button variant="ghost" onClick={() => setDepositModal(false)} className="flex-1">
-              {T('cancel')}
-            </Button>
-            <Button loading={actionLoading} onClick={handleDeposit} className="flex-1">
-              ↑ {T('deposit')}
-            </Button>
+            <Button variant="ghost" onClick={() => setDepositModal(false)} className="flex-1">{T('cancel')}</Button>
+            <Button loading={actionLoading} onClick={handleDeposit} className="flex-1">↑ {T('deposit')}</Button>
           </div>
         </div>
       </Modal>
@@ -329,31 +278,15 @@ export default function ObjectiveDetail() {
       <Modal open={withdrawModal} onClose={() => setWithdrawModal(false)} title={T('withdraw')}>
         <div className="flex flex-col gap-4">
           {stats?.is_locked && (
-            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-3 text-sm text-amber-800 dark:text-amber-400">
+            <div className="bg-[#FFF8E1] dark:bg-yellow-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-3 text-sm text-[#1A4731] dark:text-amber-400">
               🔒 {T('lockedUntil')} {formatDate(objective.lock_date)}
             </div>
           )}
-          <Input
-            label={T('amount')}
-            type="number"
-            value={withdrawForm.amount}
-            onChange={e => setWithdrawForm(f => ({ ...f, amount: e.target.value }))}
-            placeholder="5 000"
-            suffix={T('gnf')}
-          />
-          <Input
-            label={T('note')}
-            value={withdrawForm.note}
-            onChange={e => setWithdrawForm(f => ({ ...f, note: e.target.value }))}
-            placeholder="Motif du retrait..."
-          />
+          <Input label={T('amount')} type="number" value={withdrawForm.amount} onChange={e => setWithdrawForm(f => ({ ...f, amount: e.target.value }))} placeholder="5 000" suffix={T('gnf')} />
+          <Input label={T('note')} value={withdrawForm.note} onChange={e => setWithdrawForm(f => ({ ...f, note: e.target.value }))} placeholder="Motif du retrait..." />
           <div className="flex gap-3 pt-2">
-            <Button variant="ghost" onClick={() => setWithdrawModal(false)} className="flex-1">
-              {T('cancel')}
-            </Button>
-            <Button variant="secondary" loading={actionLoading} onClick={handleWithdraw} className="flex-1">
-              ↓ {T('withdraw')}
-            </Button>
+            <Button variant="ghost" onClick={() => setWithdrawModal(false)} className="flex-1">{T('cancel')}</Button>
+            <Button variant="secondary" loading={actionLoading} onClick={handleWithdraw} className="flex-1">↓ {T('withdraw')}</Button>
           </div>
         </div>
       </Modal>
@@ -363,17 +296,13 @@ export default function ObjectiveDetail() {
         <div className="flex flex-col gap-4">
           <p className="text-slate-600 dark:text-slate-400 text-sm">{T('closeDesc')}</p>
           {objective.current_balance > 0 && (
-            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-2xl p-3 text-sm text-amber-800 dark:text-amber-400">
+            <div className="bg-[#FFF8E1] dark:bg-yellow-900/20 rounded-2xl p-3 text-sm text-[#1A4731] dark:text-amber-400">
               {T('currentBalanceLabel')} : <strong>{formatAmount(objective.current_balance)} {T('gnf')}</strong>
             </div>
           )}
           <div className="flex gap-3">
-            <Button variant="ghost" onClick={() => setDeleteConfirm(false)} className="flex-1">
-              {T('cancel')}
-            </Button>
-            <Button variant="danger" loading={actionLoading} onClick={handleDelete} className="flex-1">
-              {T('closeBtn')}
-            </Button>
+            <Button variant="ghost" onClick={() => setDeleteConfirm(false)} className="flex-1">{T('cancel')}</Button>
+            <Button variant="danger" loading={actionLoading} onClick={handleDelete} className="flex-1">{T('closeBtn')}</Button>
           </div>
         </div>
       </Modal>

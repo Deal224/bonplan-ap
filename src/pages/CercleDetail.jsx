@@ -332,7 +332,7 @@ export default function CercleDetail() {
       {/* Invite Modal */}
       <Modal open={inviteModal} onClose={() => setInviteModal(false)} title={T('inviteMember')}>
         <div className="flex flex-col gap-4">
-          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-3 text-xs text-blue-700 dark:text-blue-400">
+          <div className="bg-[#FFF8E1] dark:bg-green-900/20 rounded-2xl p-3 text-xs text-[#1A4731] dark:text-green-400">
             💡 Le membre doit avoir un compte BON PLAN actif.
           </div>
           <Input

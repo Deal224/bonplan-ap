@@ -18,10 +18,7 @@ function ScoreCircle({ score }) {
         <circle cx="90" cy="90" r={radius} fill="none" stroke="#E2E8F0" strokeWidth="12" />
         <motion.circle
           cx="90" cy="90" r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth="12"
-          strokeLinecap="round"
+          fill="none" stroke={color} strokeWidth="12" strokeLinecap="round"
           strokeDasharray={circumference}
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset: circumference * (1 - pct) }}
@@ -58,10 +55,7 @@ export default function Score() {
   async function loadData() {
     setLoading(true);
     try {
-      const [scoreRes, passportRes] = await Promise.all([
-        api.getScore(),
-        api.getPassport(),
-      ]);
+      const [scoreRes, passportRes] = await Promise.all([api.getScore(), api.getPassport()]);
       setScoreData(scoreRes);
       setPassport(passportRes);
     } catch (err) {
@@ -80,13 +74,10 @@ export default function Score() {
     );
   }
 
-  // BUG 3 FIX: passport tab label via T()
-  const passportLabel = `🪪 ${T('passport')}`;
-
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{T('score')}</h1>
+        <h1 className="text-2xl font-bold text-[#1A4731] dark:text-white">{T('score')}</h1>
         <p className="text-slate-400 text-sm mt-0.5">{T('scoreDesc')}</p>
       </div>
 
@@ -94,14 +85,14 @@ export default function Score() {
       <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 rounded-2xl p-1">
         {[
           { key: 'score', label: `⚡ ${T('score')}` },
-          { key: 'passport', label: passportLabel },
+          { key: 'passport', label: `🪪 ${T('passport')}` },
         ].map(t => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
               tab === t.key
-                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                ? 'bg-[#FFBE00] text-[#1A4731] shadow-sm'
                 : 'text-slate-500 dark:text-slate-400'
             }`}
           >
@@ -116,8 +107,7 @@ export default function Score() {
           <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 flex flex-col items-center gap-3">
             <ScoreCircle score={scoreData.score} />
             <div className="text-center">
-              <p className="text-xl font-bold text-slate-900 dark:text-white">{scoreData.level}</p>
-              {/* BUG 3 FIX */}
+              <p className="text-xl font-bold text-[#1A4731] dark:text-white">{scoreData.level}</p>
               <p className="text-slate-400 text-sm mt-1">
                 {scoreData.score >= 80 ? T('scoreExcellent')
                   : scoreData.score >= 50 ? T('scoreGood')
@@ -126,20 +116,19 @@ export default function Score() {
             </div>
           </div>
 
-          {/* Score tips — BUG 3 FIX */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-4">
-            <p className="text-sm font-semibold text-[#1A3C6E] dark:text-blue-400 mb-2">{T('scoreTips')}</p>
-            <ul className="text-xs text-blue-700/80 dark:text-blue-400/80 flex flex-col gap-1.5">
-              <li className="flex items-center gap-2">✓ {T('tip1')}</li>
-              <li className="flex items-center gap-2">✓ {T('tip2')}</li>
-              <li className="flex items-center gap-2">✓ {T('tip3')}</li>
-              <li className="flex items-center gap-2">✓ {T('tip4')}</li>
+          {/* Tips */}
+          <div className="bg-[#FFF8E1] dark:bg-green-900/20 rounded-2xl p-4">
+            <p className="text-sm font-semibold text-[#1A4731] dark:text-green-400 mb-2">{T('scoreTips')}</p>
+            <ul className="text-xs text-[#1A4731]/70 dark:text-green-400/80 flex flex-col gap-1.5">
+              {['tip1', 'tip2', 'tip3', 'tip4'].map(k => (
+                <li key={k} className="flex items-center gap-2">✓ {T(k)}</li>
+              ))}
             </ul>
           </div>
 
           {/* Badges */}
           <div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-3">{T('badges')}</h2>
+            <h2 className="text-lg font-bold text-[#1A4731] dark:text-white mb-3">{T('badges')}</h2>
             {!scoreData.badges || scoreData.badges.length === 0 ? (
               <div className="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
                 <p className="text-4xl mb-2">🏅</p>
@@ -156,7 +145,7 @@ export default function Score() {
                     className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 flex flex-col items-center gap-2 text-center"
                   >
                     <span className="text-3xl">{badge.emoji || '🏅'}</span>
-                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">{badge.name}</p>
+                    <p className="text-xs font-semibold text-[#1A4731] dark:text-slate-300">{badge.name}</p>
                   </motion.div>
                 ))}
               </div>
@@ -168,7 +157,7 @@ export default function Score() {
       {tab === 'passport' && passport && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-4">
           {/* Passport card */}
-          <div className="bg-gradient-to-br from-[#1A3C6E] via-[#1e4a87] to-[#0f2548] rounded-3xl p-6 text-white relative overflow-hidden">
+          <div className="bg-gradient-to-br from-[#1A4731] via-[#1e5c35] to-[#0f2f1a] rounded-3xl p-6 text-white relative overflow-hidden">
             <div className="absolute inset-0 opacity-10">
               <div className="absolute top-4 right-4 w-32 h-32 rounded-full border-4 border-white" />
               <div className="absolute bottom-4 left-4 w-20 h-20 rounded-full border-2 border-white" />
@@ -177,10 +166,9 @@ export default function Score() {
               <div className="flex items-start justify-between mb-6">
                 <div>
                   <p className="text-white/50 text-xs uppercase tracking-widest">Bon Plan</p>
-                  {/* BUG 3 FIX */}
                   <p className="text-white/50 text-xs uppercase tracking-widest">{T('passport')}</p>
                 </div>
-                <span className="text-4xl">💰</span>
+                <div className="w-12 h-12 rounded-xl bg-[#FFBE00] flex items-center justify-center text-2xl">💰</div>
               </div>
 
               <p className="text-2xl font-bold mb-1">{passport.user?.name}</p>
@@ -188,7 +176,6 @@ export default function Score() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  {/* BUG 3 FIX */}
                   <p className="text-white/50 text-xs">{T('totalSaved')}</p>
                   <p className="text-xl font-bold">{formatAmount(passport.passport?.total_saved)} {T('gnf')}</p>
                 </div>
@@ -219,18 +206,14 @@ export default function Score() {
             </div>
           </div>
 
-          {/* Share button */}
+          {/* Share */}
           <button
             onClick={() => {
               const text = `${T('passport')} BON PLAN\n💰 ${T('totalSaved')}: ${formatAmount(passport.passport?.total_saved)} ${T('gnf')}\n⚡ ${T('score')}: ${passport.passport?.score}/100\n🏆 ${passport.passport?.level}`;
-              if (navigator.share) {
-                navigator.share({ title: 'BON PLAN Passport', text });
-              } else {
-                navigator.clipboard?.writeText(text);
-                toast.success(T('copied'));
-              }
+              if (navigator.share) { navigator.share({ title: 'BON PLAN Passport', text }); }
+              else { navigator.clipboard?.writeText(text); toast.success(T('copied')); }
             }}
-            className="w-full py-3 rounded-2xl border-2 border-[#1A3C6E] dark:border-blue-500 text-[#1A3C6E] dark:text-blue-400 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer transition-colors"
+            className="w-full py-3 rounded-2xl border-2 border-[#1A4731] dark:border-green-500 text-[#1A4731] dark:text-green-400 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-[#FFF8E1] dark:hover:bg-green-900/20 cursor-pointer transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
@@ -238,7 +221,7 @@ export default function Score() {
             {T('share')}
           </button>
 
-          {/* Stats — BUG 3 FIX: use T() for all labels */}
+          {/* Stats */}
           <div className="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-100 dark:border-slate-700">
             <p className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-4">{T('statistics')}</p>
             <div className="flex flex-col gap-3">
@@ -253,7 +236,7 @@ export default function Score() {
                     <span>{stat.icon}</span>
                     <span className="text-sm text-slate-600 dark:text-slate-400">{T(stat.labelKey)}</span>
                   </div>
-                  <span className="font-bold text-slate-900 dark:text-white">{stat.value ?? 0}</span>
+                  <span className="font-bold text-[#1A4731] dark:text-white">{stat.value ?? 0}</span>
                 </div>
               ))}
             </div>

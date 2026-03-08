@@ -1,12 +1,12 @@
 @import "tailwindcss";
 
-/* BUG 2 FIX: Tailwind v4 dark mode via class strategy */
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-blue-deep: #1A3C6E;
-  --color-blue-mid: #2563EB;
-  --color-blue-light: #EFF6FF;
+  --color-primary: #FFBE00;
+  --color-primary-dark: #1A4731;
+  --color-accent: #FFF8E1;
+  --color-success: #2E7D52;
 }
 
 * {
@@ -21,13 +21,12 @@ html, body, #root {
 }
 
 body {
-  background: #F8FAFC;
-  color: #0F172A;
+  background: #FFFFFF;
+  color: #1A4731;
   margin: 0;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Dark mode body override */
 html.dark body {
   background: #0F172A;
   color: #F1F5F9;

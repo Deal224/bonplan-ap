@@ -10,13 +10,14 @@ export function ObjectiveCard({ objective, onClick, index = 0 }) {
   const days = daysUntil(objective.lock_date);
   const completed = pct >= 100;
 
+  // Palette nouvelle : vert foncé / doré / autres couleurs vives
   const gradients = [
-    'from-blue-500 to-indigo-600',
-    'from-emerald-500 to-teal-600',
-    'from-violet-500 to-purple-600',
-    'from-orange-500 to-amber-600',
+    'from-[#1A4731] to-[#0f2f1a]',
+    'from-emerald-600 to-teal-700',
+    'from-amber-500 to-orange-600',
+    'from-violet-600 to-purple-700',
     'from-rose-500 to-pink-600',
-    'from-cyan-500 to-sky-600',
+    'from-cyan-600 to-sky-700',
   ];
   const gradient = gradients[index % gradients.length];
 

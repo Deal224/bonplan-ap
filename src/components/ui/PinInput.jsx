@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 
 export function PinInput({ value, onChange, length = 4, secret = false }) {
   const inputs = useRef([]);
@@ -46,9 +46,9 @@ export function PinInput({ value, onChange, length = 4, secret = false }) {
           className={`
             w-14 h-14 text-center text-2xl font-bold rounded-2xl border-2 outline-none transition-all
             ${value[i]
-              ? 'border-[#1A3C6E] bg-blue-50 dark:bg-blue-900/30 text-[#1A3C6E] dark:text-blue-400'
-              : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white'}
-            focus:border-[#1A3C6E] focus:ring-2 focus:ring-[#1A3C6E]/10
+              ? 'border-[#FFBE00] bg-[#FFF8E1] dark:bg-yellow-900/30 text-[#1A4731] dark:text-yellow-400'
+              : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-[#1A4731] dark:text-white'}
+            focus:border-[#FFBE00] focus:ring-2 focus:ring-[#FFBE00]/20
           `}
         />
       ))}

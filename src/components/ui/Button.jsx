@@ -1,14 +1,14 @@
 import { motion } from 'framer-motion';
 
-export function Button({ children, onClick, variant = 'primary', size = 'md', disabled, loading, className = '', type = 'button', fullWidth }) {
+export function Button({ children, onClick, variant = 'primary', size = 'md', disabled, loading, className = '', type = 'button', fullWidth, style }) {
   const base = 'inline-flex items-center justify-center font-semibold rounded-2xl transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 select-none';
 
   const variants = {
-    primary: 'bg-[#1A3C6E] text-white hover:bg-[#15305a] active:scale-95 focus:ring-[#1A3C6E] shadow-sm',
-    secondary: 'bg-white dark:bg-slate-700 text-[#1A3C6E] dark:text-blue-400 border border-[#1A3C6E] dark:border-blue-500 hover:bg-blue-50 dark:hover:bg-slate-600 active:scale-95 focus:ring-[#1A3C6E]',
+    primary: 'bg-[#FFBE00] text-[#1A4731] hover:bg-[#e6ac00] active:scale-95 focus:ring-[#FFBE00] shadow-sm',
+    secondary: 'bg-white dark:bg-slate-700 text-[#1A4731] dark:text-yellow-400 border border-[#1A4731] dark:border-yellow-500 hover:bg-[#FFF8E1] dark:hover:bg-slate-600 active:scale-95 focus:ring-[#1A4731]',
     ghost: 'bg-transparent text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95',
     danger: 'bg-red-500 text-white hover:bg-red-600 active:scale-95 focus:ring-red-400',
-    success: 'bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 focus:ring-emerald-400 shadow-sm',
+    success: 'bg-[#2E7D52] text-white hover:bg-[#256642] active:scale-95 focus:ring-[#2E7D52] shadow-sm',
   };
 
   const sizes = {
@@ -23,6 +23,7 @@ export function Button({ children, onClick, variant = 'primary', size = 'md', di
       onClick={onClick}
       disabled={disabled || loading}
       whileTap={{ scale: disabled ? 1 : 0.97 }}
+      style={style}
       className={`${base} ${variants[variant]} ${sizes[size]} ${fullWidth ? 'w-full' : ''} ${disabled || loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${className}`}
     >
       {loading && (

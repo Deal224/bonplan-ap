@@ -27,7 +27,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }) {
           >
             {title && (
               <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100 dark:border-slate-700">
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h2>
+                <h2 className="text-lg font-semibold text-[#1A4731] dark:text-white">{title}</h2>
                 <button
                   onClick={onClose}
                   className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors cursor-pointer"

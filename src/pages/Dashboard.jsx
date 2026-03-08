@@ -26,7 +26,7 @@ export default function Dashboard() {
       const [objRes, scoreRes, tontinesRes] = await Promise.all([
         api.getObjectives(),
         api.getScore(),
-        api.getTontines().catch(() => ({ tontines: [] })), // non-bloquant
+        api.getTontines().catch(() => ({ tontines: [] })),
       ]);
       dispatch({ type: 'SET_OBJECTIVES', objectives: objRes.objectives || [] });
       dispatch({ type: 'SET_SCORE', score: scoreRes });
@@ -43,8 +43,6 @@ export default function Dashboard() {
     .reduce((sum, o) => sum + (o.current_balance || 0), 0);
 
   const activeObjectives = state.objectives.filter(o => o.status !== 'closed');
-
-  // BUG 3 FIX: locale-aware date
   const dateLocale = state.lang === 'en' ? 'en-GB' : 'fr-FR';
 
   return (
@@ -55,23 +53,23 @@ export default function Dashboard() {
           <p className="text-slate-400 dark:text-slate-500 text-sm capitalize">
             {new Date().toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mt-0.5">
+          <h1 className="text-2xl font-bold text-[#1A4731] dark:text-white mt-0.5">
             {T('greeting')} {state.user?.name?.split(' ')[0] || ''} 👋
           </h1>
         </div>
         <button
           onClick={() => navigate('/profile')}
-          className="w-10 h-10 rounded-full bg-[#1A3C6E] text-white flex items-center justify-center font-bold text-sm cursor-pointer"
+          className="w-10 h-10 rounded-full bg-[#1A4731] text-white flex items-center justify-center font-bold text-sm cursor-pointer"
         >
           {state.user?.name?.[0]?.toUpperCase() || 'U'}
         </button>
       </div>
 
-      {/* Balance card */}
+      {/* Balance card — gradient vert foncé */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-br from-[#1A3C6E] to-[#0f2548] rounded-3xl p-6 text-white shadow-lg relative overflow-hidden"
+        className="bg-gradient-to-br from-[#1A4731] to-[#0f2f1a] rounded-3xl p-6 text-white shadow-lg relative overflow-hidden"
       >
         <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/5 -translate-y-10 translate-x-10" />
         <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full bg-white/5 translate-y-8 -translate-x-8" />
@@ -101,7 +99,7 @@ export default function Dashboard() {
 
           {state.score && (
             <div className="flex items-center gap-2 mt-4">
-              <div className="bg-white/20 rounded-full px-3 py-1 text-xs font-semibold">
+              <div className="bg-[#FFBE00]/20 text-[#FFBE00] rounded-full px-3 py-1 text-xs font-semibold">
                 ⚡ {T('score')} {state.score.score}/100
               </div>
               <div className="bg-white/10 rounded-full px-3 py-1 text-xs text-white/70">
@@ -123,10 +121,10 @@ export default function Dashboard() {
         </div>
       </motion.div>
 
-      {/* Objectives section */}
+      {/* Objectives */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">{T('myObjectives')}</h2>
+          <h2 className="text-lg font-bold text-[#1A4731] dark:text-white">{T('myObjectives')}</h2>
           <Button size="sm" onClick={() => navigate('/objective/new')}>
             + {T('newObjective')}
           </Button>
@@ -145,7 +143,7 @@ export default function Dashboard() {
             className="text-center py-16"
           >
             <div className="text-6xl mb-4">🌱</div>
-            <p className="text-slate-600 dark:text-slate-400 font-medium">{T('noObjectives')}</p>
+            <p className="text-[#1A4731]/70 dark:text-slate-400 font-medium">{T('noObjectives')}</p>
             <p className="text-slate-400 dark:text-slate-500 text-sm mt-1">{T('startSaving')}</p>
             <Button className="mt-6" onClick={() => navigate('/objective/new')}>
               {T('createFirst')}
@@ -165,11 +163,11 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* ── Cercles d'épargne ── */}
+      {/* Cercles d'épargne */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">{T('cercles')}</h2>
+            <h2 className="text-lg font-bold text-[#1A4731] dark:text-white">{T('cercles')}</h2>
             <p className="text-slate-400 text-xs">{T('cerclesDesc')}</p>
           </div>
           <Button size="sm" variant="secondary" onClick={() => navigate('/cercles')}>
