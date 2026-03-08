@@ -44,34 +44,38 @@ export const api = {
   createObjective: (body) => request('/objectives', { method: 'POST', body: JSON.stringify(body) }),
   deleteObjective: (id) => request(`/objectives/${id}`, { method: 'DELETE' }),
 
-  // BUG 1 FIX: deposit via POST /api/objectives/:id/deposit
-  // amount must be integer (parseInt), phone as string
-  deposit: (objectiveId, amount, phone) => {
-    const body = { amount: parseInt(amount, 10) };
-    if (phone) body.phone = String(phone);
-    console.log('[API] Deposit payload:', body);
-    return request(`/objectives/${objectiveId}/deposit`, {
-      method: 'POST',
-      body: JSON.stringify(body),
-    });
-  },
+  // Transactions — routes réelles dans transactions.js, monté sur /api/transactions
+  // POST /api/transactions/:id/deposit  → { amount: int (min 1000), note?: string }
+  // POST /api/transactions/:id/withdraw → { amount: int, note?: string }
+  deposit: (objectiveId, amount, note) => request(`/transactions/${objectiveId}/deposit`, {
+    method: 'POST',
+    body: JSON.stringify({
+      amount: parseInt(amount, 10),
+      ...(note ? { note: String(note) } : {}),
+    }),
+  }),
 
-  // Fallback: initiate via Moneroo payment gateway
-  initiatePayment: (body) => {
-    const payload = {
-      objective_id: body.objective_id,
-      amount: parseInt(body.amount, 10),
-    };
-    if (body.phone) payload.phone = String(body.phone);
-    console.log('[API] InitiatePayment payload:', payload);
-    return request('/payments/initiate', { method: 'POST', body: JSON.stringify(payload) });
-  },
+  withdraw: (objectiveId, amount, note) => request(`/transactions/${objectiveId}/withdraw`, {
+    method: 'POST',
+    body: JSON.stringify({
+      amount: parseInt(amount, 10),
+      ...(note ? { note: String(note) } : {}),
+    }),
+  }),
 
-  getPayments: () => request('/payments'),
-
-  // Transactions
   getTransactions: (objective_id) =>
     request(`/transactions${objective_id ? `?objective_id=${objective_id}` : ''}`),
+
+  // Payments (Mobile Money via Moneroo — nécessite APP_BASE_URL côté backend)
+  initiatePayment: (body) => request('/payments/initiate', {
+    method: 'POST',
+    body: JSON.stringify({
+      objective_id: body.objective_id,
+      amount: parseInt(body.amount, 10),
+      ...(body.phone ? { phone: String(body.phone) } : {}),
+    }),
+  }),
+  getPayments: () => request('/payments'),
 
   // Score
   getScore: () => request('/score'),

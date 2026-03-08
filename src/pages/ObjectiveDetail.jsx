@@ -22,9 +22,11 @@ export default function ObjectiveDetail() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [depositModal, setDepositModal] = useState(false);
+  const [withdrawModal, setWithdrawModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [depositForm, setDepositForm] = useState({ amount: '', phone: '' });
+  const [depositForm, setDepositForm] = useState({ amount: '', note: '' });
+  const [withdrawForm, setWithdrawForm] = useState({ amount: '', note: '' });
 
   useEffect(() => { loadData(); }, [id]);
 
@@ -46,7 +48,7 @@ export default function ObjectiveDetail() {
     }
   }
 
-  // BUG 1 FIX: use api.deposit with parseInt + phone as string + handle payment_url
+  // Route correcte : POST /api/transactions/:id/deposit → { amount: int, note?: string }
   async function handleDeposit() {
     const amt = parseInt(depositForm.amount, 10);
     if (!depositForm.amount || amt < 1000) {
@@ -55,24 +57,47 @@ export default function ObjectiveDetail() {
     }
     setActionLoading(true);
     try {
-      const phone = depositForm.phone || state.user?.phone || '';
-      const res = await api.deposit(id, amt, phone);
-
-      // If backend returns a payment_url, redirect user to complete Mobile Money payment
-      if (res.payment_url || res.checkout_url) {
-        const url = res.payment_url || res.checkout_url;
-        toast.success(T('paymentRedirect'));
-        setTimeout(() => window.open(url, '_blank'), 500);
-      } else {
-        toast.success(T('paymentSuccess'));
-        // Reload data to reflect new balance
-        await loadData();
-      }
-
+      const res = await api.deposit(id, amt, depositForm.note);
+      const msg = res.milestone_reached?.reached
+        ? res.milestone_reached.message
+        : res.message || T('paymentSuccess');
+      toast.success(msg);
       setDepositModal(false);
-      setDepositForm({ amount: '', phone: '' });
+      setDepositForm({ amount: '', note: '' });
+      await loadData();
     } catch (err) {
       console.error('[Deposit error]', err);
+      toast.error(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  // Route correcte : POST /api/transactions/:id/withdraw → { amount: int, note?: string }
+  async function handleWithdraw() {
+    const amt = parseInt(withdrawForm.amount, 10);
+    if (!withdrawForm.amount || amt < 1) {
+      toast.error(T('fillFields'));
+      return;
+    }
+    setActionLoading(true);
+    try {
+      const res = await api.withdraw(id, amt, withdrawForm.note);
+      if (res.approved) {
+        toast.success(res.message);
+        await loadData();
+      } else {
+        // Retrait refusé par les règles métier (résistance comptabilisée)
+        if (res.is_resistance) {
+          toast.success(`💪 ${res.message}`);
+        } else {
+          toast.error(res.message);
+        }
+      }
+      setWithdrawModal(false);
+      setWithdrawForm({ amount: '', note: '' });
+    } catch (err) {
+      console.error('[Withdraw error]', err);
       toast.error(err.message);
     } finally {
       setActionLoading(false);
@@ -222,11 +247,7 @@ export default function ObjectiveDetail() {
           <Button onClick={() => setDepositModal(true)} className="py-4">
             ↑ {T('deposit')}
           </Button>
-          <Button
-            variant="secondary"
-            onClick={() => toast.info(T('paymentInfo'))}
-            className="py-4"
-          >
+          <Button variant="secondary" onClick={() => setWithdrawModal(true)} className="py-4">
             ↓ {T('withdraw')}
           </Button>
         </div>
@@ -274,11 +295,6 @@ export default function ObjectiveDetail() {
       {/* Deposit Modal */}
       <Modal open={depositModal} onClose={() => setDepositModal(false)} title={T('deposit')}>
         <div className="flex flex-col gap-4">
-          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-4 text-sm text-[#1A3C6E] dark:text-blue-400">
-            <p className="font-semibold mb-1">💡 {T('paymentInfo')}</p>
-            <p className="text-blue-700/70 dark:text-blue-400/70 text-xs">{T('redirectInfo')}</p>
-          </div>
-
           <Input
             label={T('amountLabel')}
             type="number"
@@ -287,28 +303,56 @@ export default function ObjectiveDetail() {
             placeholder="10 000"
             suffix={T('gnf')}
           />
-
           {remaining > 0 && (
             <p className="text-xs text-slate-400">
               {T('remainingLabel')} : {formatAmount(remaining)} {T('gnf')}
             </p>
           )}
-
           <Input
-            label={T('mobileMoneyPhone')}
-            type="tel"
-            value={depositForm.phone}
-            onChange={e => setDepositForm(f => ({ ...f, phone: e.target.value }))}
-            placeholder={state.user?.phone || '0622 345 678'}
-            prefix="📱"
+            label={T('note')}
+            value={depositForm.note}
+            onChange={e => setDepositForm(f => ({ ...f, note: e.target.value }))}
+            placeholder="Ex: salaire du mois..."
           />
-
           <div className="flex gap-3 pt-2">
             <Button variant="ghost" onClick={() => setDepositModal(false)} className="flex-1">
               {T('cancel')}
             </Button>
             <Button loading={actionLoading} onClick={handleDeposit} className="flex-1">
-              {T('initiatePayment')}
+              ↑ {T('deposit')}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Withdraw Modal */}
+      <Modal open={withdrawModal} onClose={() => setWithdrawModal(false)} title={T('withdraw')}>
+        <div className="flex flex-col gap-4">
+          {stats?.is_locked && (
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-3 text-sm text-amber-800 dark:text-amber-400">
+              🔒 {T('lockedUntil')} {formatDate(objective.lock_date)}
+            </div>
+          )}
+          <Input
+            label={T('amount')}
+            type="number"
+            value={withdrawForm.amount}
+            onChange={e => setWithdrawForm(f => ({ ...f, amount: e.target.value }))}
+            placeholder="5 000"
+            suffix={T('gnf')}
+          />
+          <Input
+            label={T('note')}
+            value={withdrawForm.note}
+            onChange={e => setWithdrawForm(f => ({ ...f, note: e.target.value }))}
+            placeholder="Motif du retrait..."
+          />
+          <div className="flex gap-3 pt-2">
+            <Button variant="ghost" onClick={() => setWithdrawModal(false)} className="flex-1">
+              {T('cancel')}
+            </Button>
+            <Button variant="secondary" loading={actionLoading} onClick={handleWithdraw} className="flex-1">
+              ↓ {T('withdraw')}
             </Button>
           </div>
         </div>
