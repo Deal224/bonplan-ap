@@ -10,6 +10,8 @@ import ObjectiveDetail from './pages/ObjectiveDetail';
 import History from './pages/History';
 import Score from './pages/Score';
 import Profile from './pages/Profile';
+import Cercles from './pages/Cercles';
+import CercleDetail from './pages/CercleDetail';
 import { api } from './lib/api';
 
 function AuthGuard({ children }) {
@@ -48,6 +50,8 @@ function AppRoutes() {
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/objective/new" element={<NewObjective />} />
                   <Route path="/objective/:id" element={<ObjectiveDetail />} />
+                  <Route path="/cercles" element={<Cercles />} />
+                  <Route path="/cercle/:id" element={<CercleDetail />} />
                   <Route path="/history" element={<History />} />
                   <Route path="/score" element={<Score />} />
                   <Route path="/profile" element={<Profile />} />

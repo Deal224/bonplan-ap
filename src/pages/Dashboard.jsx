@@ -4,8 +4,9 @@ import { motion } from 'framer-motion';
 import { useApp } from '../lib/store';
 import { useLang } from '../lib/i18n';
 import { api } from '../lib/api';
-import { formatAmount } from '../lib/utils';
+import { formatAmount, progressPct } from '../lib/utils';
 import { ObjectiveCard } from '../components/ObjectiveCard';
+import { CercleCard } from '../components/CercleCard';
 import { Button } from '../components/ui/Button';
 import { useToast } from '../components/ui/Toast';
 
@@ -15,18 +16,21 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const toast = useToast();
   const [loading, setLoading] = useState(true);
+  const [tontines, setTontines] = useState([]);
 
   useEffect(() => { loadData(); }, []);
 
   async function loadData() {
     setLoading(true);
     try {
-      const [objRes, scoreRes] = await Promise.all([
+      const [objRes, scoreRes, tontinesRes] = await Promise.all([
         api.getObjectives(),
         api.getScore(),
+        api.getTontines().catch(() => ({ tontines: [] })), // non-bloquant
       ]);
       dispatch({ type: 'SET_OBJECTIVES', objectives: objRes.objectives || [] });
       dispatch({ type: 'SET_SCORE', score: scoreRes });
+      setTontines(tontinesRes.tontines || []);
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -157,6 +161,53 @@ export default function Dashboard() {
                 onClick={() => navigate(`/objective/${obj.id}`)}
               />
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Cercles d'épargne ── */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">{T('cercles')}</h2>
+            <p className="text-slate-400 text-xs">{T('cerclesDesc')}</p>
+          </div>
+          <Button size="sm" variant="secondary" onClick={() => navigate('/cercles')}>
+            {T('myCercles')} →
+          </Button>
+        </div>
+
+        {loading ? (
+          <div className="h-36 bg-slate-100 dark:bg-slate-800 rounded-3xl animate-pulse" />
+        ) : tontines.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            onClick={() => navigate('/cercles')}
+            className="cursor-pointer border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-3xl p-6 text-center hover:border-violet-300 dark:hover:border-violet-700 transition-colors"
+          >
+            <div className="text-4xl mb-2">🤝</div>
+            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{T('noCercles')}</p>
+            <p className="text-slate-400 dark:text-slate-500 text-xs mt-1">{T('noCerclesDesc')}</p>
+          </motion.div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {tontines.slice(0, 2).map((t, i) => (
+              <CercleCard
+                key={t.id}
+                tontine={t}
+                index={i}
+                onClick={() => navigate(`/cercle/${t.id}`)}
+              />
+            ))}
+            {tontines.length > 2 && (
+              <button
+                onClick={() => navigate('/cercles')}
+                className="text-center text-sm text-violet-600 dark:text-violet-400 font-medium py-2 cursor-pointer hover:underline"
+              >
+                Voir les {tontines.length - 2} autres cercles →
+              </button>
+            )}
           </div>
         )}
       </div>

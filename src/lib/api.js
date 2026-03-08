@@ -80,4 +80,15 @@ export const api = {
   // Score
   getScore: () => request('/score'),
   getPassport: () => request('/score/passport'),
+
+  // Cercles d'épargne (Tontines)
+  getTontines: () => request('/tontines'),
+  getTontine: (id) => request(`/tontines/${id}`),
+  createTontine: (body) => request('/tontines', { method: 'POST', body: JSON.stringify(body) }),
+  inviteMember: (id, body) => request(`/tontines/${id}/invite`, { method: 'POST', body: JSON.stringify(body) }),
+  tontineDeposit: (id, amount, note) => request(`/tontines/${id}/deposit`, {
+    method: 'POST',
+    body: JSON.stringify({ amount: parseInt(amount, 10), ...(note ? { note: String(note) } : {}) }),
+  }),
+  closeTontine: (id) => request(`/tontines/${id}`, { method: 'DELETE' }),
 };

@@ -30,6 +30,7 @@ function NavItem({ icon, label, active, onClick }) {
 
 const NAV_ITEMS = [
   { path: '/', icon: '🏠', labelKey: 'home' },
+  { path: '/cercles', icon: '🤝', labelKey: 'cercles' },
   { path: '/history', icon: '📋', labelKey: 'history' },
   { path: '/score', icon: '⚡', labelKey: 'score' },
   { path: '/profile', icon: '👤', labelKey: 'profile' },
