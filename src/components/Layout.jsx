@@ -8,22 +8,22 @@ function NavItem({ icon, label, active, onClick }) {
     <button
       onClick={onClick}
       className={`flex flex-col items-center gap-1 px-3 py-2 rounded-2xl transition-all cursor-pointer ${
-        active ? 'text-[#1A3C6E]' : 'text-slate-400 hover:text-slate-600'
+        active ? 'text-[#1A3C6E] dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
       }`}
     >
       <div className={`relative w-10 h-10 flex items-center justify-center rounded-2xl transition-all ${
-        active ? 'bg-blue-50' : ''
+        active ? 'bg-blue-50 dark:bg-blue-900/40' : ''
       }`}>
         {active && (
           <motion.div
             layoutId="nav-indicator"
-            className="absolute inset-0 bg-blue-50 rounded-2xl"
+            className="absolute inset-0 bg-blue-50 dark:bg-blue-900/40 rounded-2xl"
             transition={{ type: 'spring', damping: 25, stiffness: 400 }}
           />
         )}
         <span className="relative text-xl">{icon}</span>
       </div>
-      <span className={`text-xs font-medium ${active ? 'text-[#1A3C6E]' : ''}`}>{label}</span>
+      <span className={`text-xs font-medium ${active ? 'text-[#1A3C6E] dark:text-blue-400' : ''}`}>{label}</span>
     </button>
   );
 }
@@ -41,18 +41,17 @@ export function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isDetailPage = location.pathname.includes('/objective/');
   const currentRoot = '/' + location.pathname.split('/')[1];
   const activeNav = NAV_ITEMS.find(n => n.path === currentRoot || (n.path === '/' && location.pathname === '/'))?.path || '/';
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] dark:bg-slate-900">
       {/* Desktop header */}
-      <header className="hidden md:block fixed top-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-100 shadow-sm">
+      <header className="hidden md:block fixed top-0 left-0 right-0 z-40 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-700 shadow-sm">
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-2xl">💰</span>
-            <span className="text-lg font-bold text-[#1A3C6E]">BON PLAN</span>
+            <span className="text-lg font-bold text-[#1A3C6E] dark:text-blue-400">BON PLAN</span>
           </div>
           <nav className="flex items-center gap-1">
             {NAV_ITEMS.map(item => (
@@ -62,17 +61,15 @@ export function Layout({ children }) {
                 className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
                   activeNav === item.path
                     ? 'bg-[#1A3C6E] text-white'
-                    : 'text-slate-500 hover:bg-slate-100'
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
                 }`}
               >
                 {item.icon} {T(item.labelKey)}
               </button>
             ))}
           </nav>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-[#1A3C6E] text-white flex items-center justify-center text-xs font-bold">
-              {state.user?.name?.[0]?.toUpperCase()}
-            </div>
+          <div className="w-8 h-8 rounded-full bg-[#1A3C6E] text-white flex items-center justify-center text-xs font-bold">
+            {state.user?.name?.[0]?.toUpperCase()}
           </div>
         </div>
       </header>
@@ -95,7 +92,7 @@ export function Layout({ children }) {
       </main>
 
       {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-xl border-t border-slate-100 shadow-lg">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border-t border-slate-100 dark:border-slate-700 shadow-lg">
         <div className="flex items-center justify-around px-4 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
           {NAV_ITEMS.map(item => (
             <NavItem

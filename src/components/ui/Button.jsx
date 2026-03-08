@@ -5,8 +5,8 @@ export function Button({ children, onClick, variant = 'primary', size = 'md', di
 
   const variants = {
     primary: 'bg-[#1A3C6E] text-white hover:bg-[#15305a] active:scale-95 focus:ring-[#1A3C6E] shadow-sm',
-    secondary: 'bg-white text-[#1A3C6E] border border-[#1A3C6E] hover:bg-blue-50 active:scale-95 focus:ring-[#1A3C6E]',
-    ghost: 'bg-transparent text-[#64748B] hover:bg-slate-100 active:scale-95',
+    secondary: 'bg-white dark:bg-slate-700 text-[#1A3C6E] dark:text-blue-400 border border-[#1A3C6E] dark:border-blue-500 hover:bg-blue-50 dark:hover:bg-slate-600 active:scale-95 focus:ring-[#1A3C6E]',
+    ghost: 'bg-transparent text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95',
     danger: 'bg-red-500 text-white hover:bg-red-600 active:scale-95 focus:ring-red-400',
     success: 'bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 focus:ring-emerald-400 shadow-sm',
   };

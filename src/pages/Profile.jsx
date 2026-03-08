@@ -26,7 +26,7 @@ export default function Profile() {
     try {
       const res = await api.updateProfile({ name: name.trim() });
       dispatch({ type: 'SET_USER', user: res.user });
-      toast.success('Nom mis à jour !');
+      toast.success(T('save') + ' ✓');
       setNameEdit(false);
     } catch (err) {
       toast.error(err.message);
@@ -36,8 +36,9 @@ export default function Profile() {
   }
 
   async function handleChangePin() {
+    // BUG 3 FIX: use T() for error messages
     if (pins.newPin !== pins.confirm) {
-      toast.error('Les PINs ne correspondent pas');
+      toast.error(T('pinMismatch'));
       return;
     }
     if (pins.newPin.length !== 4) {
@@ -47,7 +48,7 @@ export default function Profile() {
     setLoading(true);
     try {
       await api.changePin({ current_pin: pins.current, new_pin: pins.newPin });
-      toast.success('PIN modifié !');
+      toast.success(T('changePin') + ' ✓');
       setPinModal(false);
       setPins({ current: '', newPin: '', confirm: '' });
       setPinStep(1);
@@ -60,7 +61,6 @@ export default function Profile() {
 
   function handleLogout() {
     dispatch({ type: 'LOGOUT' });
-    toast.info('Déconnecté');
   }
 
   const avatar = state.user?.name?.[0]?.toUpperCase() || 'U';
@@ -68,7 +68,7 @@ export default function Profile() {
   return (
     <div className="flex flex-col gap-5 max-w-lg mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">{T('profile')}</h1>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{T('profile')}</h1>
       </div>
 
       {/* User card */}
@@ -91,25 +91,25 @@ export default function Profile() {
         </div>
       </motion.div>
 
-      {/* Settings sections */}
+      {/* Account section */}
       <div className="flex flex-col gap-3">
-        {/* Name */}
-        <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-100">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Compte</p>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden">
+          {/* BUG 3 FIX: section header via T() */}
+          <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{T('account')}</p>
           </div>
 
           {nameEdit ? (
             <div className="p-4 flex flex-col gap-3">
               <Input
-                label="Nouveau nom"
+                label={T('nameLabel')}
                 value={name}
                 onChange={e => setName(e.target.value)}
                 placeholder="Votre nom"
               />
               <div className="flex gap-2">
                 <Button variant="ghost" onClick={() => setNameEdit(false)} className="flex-1">
-                  Annuler
+                  {T('cancel')}
                 </Button>
                 <Button loading={loading} onClick={handleSaveName} className="flex-1">
                   {T('save')}
@@ -119,12 +119,12 @@ export default function Profile() {
           ) : (
             <button
               onClick={() => { setName(state.user?.name || ''); setNameEdit(true); }}
-              className="w-full flex items-center justify-between px-4 py-4 hover:bg-slate-50 cursor-pointer transition-colors"
+              className="w-full flex items-center justify-between px-4 py-4 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors"
             >
               <div className="flex items-center gap-3">
                 <span className="text-xl">👤</span>
                 <div className="text-left">
-                  <p className="text-sm font-medium text-slate-900">Nom</p>
+                  <p className="text-sm font-medium text-slate-900 dark:text-white">{T('nameLabel')}</p>
                   <p className="text-xs text-slate-400">{state.user?.name}</p>
                 </div>
               </div>
@@ -136,11 +136,11 @@ export default function Profile() {
 
           <button
             onClick={() => setPinModal(true)}
-            className="w-full flex items-center justify-between px-4 py-4 hover:bg-slate-50 cursor-pointer transition-colors border-t border-slate-100"
+            className="w-full flex items-center justify-between px-4 py-4 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors border-t border-slate-100 dark:border-slate-700"
           >
             <div className="flex items-center gap-3">
               <span className="text-xl">🔐</span>
-              <p className="text-sm font-medium text-slate-900">{T('changePin')}</p>
+              <p className="text-sm font-medium text-slate-900 dark:text-white">{T('changePin')}</p>
             </div>
             <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
@@ -148,17 +148,17 @@ export default function Profile() {
           </button>
         </div>
 
-        {/* Preferences */}
-        <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-100">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Préférences</p>
+        {/* Preferences — BUG 3 FIX */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{T('preferences')}</p>
           </div>
 
-          {/* Dark mode */}
-          <div className="flex items-center justify-between px-4 py-4 border-b border-slate-100">
+          {/* Dark mode toggle */}
+          <div className="flex items-center justify-between px-4 py-4 border-b border-slate-100 dark:border-slate-700">
             <div className="flex items-center gap-3">
               <span className="text-xl">{state.darkMode ? '🌙' : '☀️'}</span>
-              <p className="text-sm font-medium text-slate-900">{T('darkMode')}</p>
+              <p className="text-sm font-medium text-slate-900 dark:text-white">{T('darkMode')}</p>
             </div>
             <button
               onClick={() => dispatch({ type: 'SET_DARK', value: !state.darkMode })}
@@ -172,15 +172,17 @@ export default function Profile() {
           <div className="flex items-center justify-between px-4 py-4">
             <div className="flex items-center gap-3">
               <span className="text-xl">🌍</span>
-              <p className="text-sm font-medium text-slate-900">{T('language')}</p>
+              <p className="text-sm font-medium text-slate-900 dark:text-white">{T('language')}</p>
             </div>
-            <div className="flex gap-1 bg-slate-100 rounded-xl p-1">
+            <div className="flex gap-1 bg-slate-100 dark:bg-slate-700 rounded-xl p-1">
               {['fr', 'en'].map(l => (
                 <button
                   key={l}
                   onClick={() => dispatch({ type: 'SET_LANG', value: l })}
                   className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    state.lang === l ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'
+                    state.lang === l
+                      ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white'
+                      : 'text-slate-500 dark:text-slate-400'
                   }`}
                 >
                   {l.toUpperCase()}
@@ -190,17 +192,17 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* App info */}
-        <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-100">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">À propos</p>
+        {/* About — BUG 3 FIX */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{T('about')}</p>
           </div>
           <div className="px-4 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="text-xl">💰</span>
               <div>
-                <p className="text-sm font-medium text-slate-900">BON PLAN</p>
-                <p className="text-xs text-slate-400">Version 4.0</p>
+                <p className="text-sm font-medium text-slate-900 dark:text-white">BON PLAN</p>
+                <p className="text-xs text-slate-400">{T('version')} 4.0</p>
               </div>
             </div>
           </div>
@@ -209,40 +211,50 @@ export default function Profile() {
         {/* Logout */}
         <button
           onClick={handleLogout}
-          className="w-full py-4 rounded-2xl border-2 border-red-200 text-red-500 font-semibold text-sm hover:bg-red-50 cursor-pointer transition-colors"
+          className="w-full py-4 rounded-2xl border-2 border-red-200 dark:border-red-800 text-red-500 font-semibold text-sm hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer transition-colors"
         >
           {T('logout')}
         </button>
       </div>
 
-      {/* PIN Change Modal */}
-      <Modal open={pinModal} onClose={() => { setPinModal(false); setPinStep(1); setPins({ current: '', newPin: '', confirm: '' }); }} title={T('changePin')}>
+      {/* PIN Change Modal — BUG 3 FIX: all strings via T() */}
+      <Modal
+        open={pinModal}
+        onClose={() => { setPinModal(false); setPinStep(1); setPins({ current: '', newPin: '', confirm: '' }); }}
+        title={T('changePin')}
+      >
         <div className="flex flex-col gap-5">
           {pinStep === 1 && (
             <>
-              <p className="text-sm text-slate-500 text-center">Entrez votre PIN actuel</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 text-center">{T('pinCurrentStep')}</p>
               <PinInput value={pins.current} onChange={v => setPins(p => ({ ...p, current: v }))} secret />
-              <Button fullWidth onClick={() => { if (pins.current.length === 4) setPinStep(2); else toast.error(T('pinLength')); }}>
-                Continuer
+              <Button fullWidth onClick={() => {
+                if (pins.current.length === 4) setPinStep(2);
+                else toast.error(T('pinLength'));
+              }}>
+                {T('continue')}
               </Button>
             </>
           )}
           {pinStep === 2 && (
             <>
-              <p className="text-sm text-slate-500 text-center">Choisissez un nouveau PIN</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 text-center">{T('pinNewStep')}</p>
               <PinInput value={pins.newPin} onChange={v => setPins(p => ({ ...p, newPin: v }))} secret />
-              <Button fullWidth onClick={() => { if (pins.newPin.length === 4) setPinStep(3); else toast.error(T('pinLength')); }}>
-                Continuer
+              <Button fullWidth onClick={() => {
+                if (pins.newPin.length === 4) setPinStep(3);
+                else toast.error(T('pinLength'));
+              }}>
+                {T('continue')}
               </Button>
             </>
           )}
           {pinStep === 3 && (
             <>
-              <p className="text-sm text-slate-500 text-center">Confirmez le nouveau PIN</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 text-center">{T('pinConfirmStep')}</p>
               <PinInput value={pins.confirm} onChange={v => setPins(p => ({ ...p, confirm: v }))} secret />
               <div className="flex gap-3">
-                <Button variant="ghost" onClick={() => setPinStep(2)} className="flex-1">← Retour</Button>
-                <Button loading={loading} onClick={handleChangePin} className="flex-1">Confirmer</Button>
+                <Button variant="ghost" onClick={() => setPinStep(2)} className="flex-1">{T('back')}</Button>
+                <Button loading={loading} onClick={handleChangePin} className="flex-1">{T('confirm')}</Button>
               </div>
             </>
           )}

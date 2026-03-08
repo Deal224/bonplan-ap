@@ -12,8 +12,13 @@ async function request(path, options = {}) {
     ...options.headers,
   };
 
-  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+  const url = `${BASE_URL}${path}`;
+  console.log(`[API] ${options.method || 'GET'} ${url}`, options.body ? JSON.parse(options.body) : '');
+
+  const res = await fetch(url, { ...options, headers });
   const data = await res.json();
+
+  console.log(`[API] Response ${res.status}:`, data);
 
   if (!data.success && data.error) {
     const err = new Error(data.error);
@@ -39,8 +44,29 @@ export const api = {
   createObjective: (body) => request('/objectives', { method: 'POST', body: JSON.stringify(body) }),
   deleteObjective: (id) => request(`/objectives/${id}`, { method: 'DELETE' }),
 
-  // Payments (deposit via Mobile Money)
-  initiatePayment: (body) => request('/payments/initiate', { method: 'POST', body: JSON.stringify(body) }),
+  // BUG 1 FIX: deposit via POST /api/objectives/:id/deposit
+  // amount must be integer (parseInt), phone as string
+  deposit: (objectiveId, amount, phone) => {
+    const body = { amount: parseInt(amount, 10) };
+    if (phone) body.phone = String(phone);
+    console.log('[API] Deposit payload:', body);
+    return request(`/objectives/${objectiveId}/deposit`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  },
+
+  // Fallback: initiate via Moneroo payment gateway
+  initiatePayment: (body) => {
+    const payload = {
+      objective_id: body.objective_id,
+      amount: parseInt(body.amount, 10),
+    };
+    if (body.phone) payload.phone = String(body.phone);
+    console.log('[API] InitiatePayment payload:', payload);
+    return request('/payments/initiate', { method: 'POST', body: JSON.stringify(payload) });
+  },
+
   getPayments: () => request('/payments'),
 
   // Transactions

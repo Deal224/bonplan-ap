@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useApp } from '../lib/store';
 import { useLang } from '../lib/i18n';
 import { api } from '../lib/api';
@@ -22,15 +22,11 @@ export default function ObjectiveDetail() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [depositModal, setDepositModal] = useState(false);
-  const [withdrawModal, setWithdrawModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [depositForm, setDepositForm] = useState({ amount: '', phone: '', note: '' });
-  const [withdrawForm, setWithdrawForm] = useState({ amount: '', note: '' });
+  const [depositForm, setDepositForm] = useState({ amount: '', phone: '' });
 
-  useEffect(() => {
-    loadData();
-  }, [id]);
+  useEffect(() => { loadData(); }, [id]);
 
   async function loadData() {
     setLoading(true);
@@ -50,24 +46,33 @@ export default function ObjectiveDetail() {
     }
   }
 
+  // BUG 1 FIX: use api.deposit with parseInt + phone as string + handle payment_url
   async function handleDeposit() {
-    if (!depositForm.amount || Number(depositForm.amount) < 1000) {
-      toast.error('Montant minimum : 1 000 GNF');
+    const amt = parseInt(depositForm.amount, 10);
+    if (!depositForm.amount || amt < 1000) {
+      toast.error(T('minAmount'));
       return;
     }
     setActionLoading(true);
     try {
-      const returnUrl = `${window.location.origin}/objective/${id}?payment=success`;
-      await api.initiatePayment({
-        objective_id: id,
-        amount: Number(depositForm.amount),
-        phone: depositForm.phone || state.user?.phone,
-        return_url: returnUrl,
-      });
-      toast.success(T('paymentSuccess'));
+      const phone = depositForm.phone || state.user?.phone || '';
+      const res = await api.deposit(id, amt, phone);
+
+      // If backend returns a payment_url, redirect user to complete Mobile Money payment
+      if (res.payment_url || res.checkout_url) {
+        const url = res.payment_url || res.checkout_url;
+        toast.success(T('paymentRedirect'));
+        setTimeout(() => window.open(url, '_blank'), 500);
+      } else {
+        toast.success(T('paymentSuccess'));
+        // Reload data to reflect new balance
+        await loadData();
+      }
+
       setDepositModal(false);
-      setDepositForm({ amount: '', phone: '', note: '' });
+      setDepositForm({ amount: '', phone: '' });
     } catch (err) {
+      console.error('[Deposit error]', err);
       toast.error(err.message);
     } finally {
       setActionLoading(false);
@@ -80,7 +85,7 @@ export default function ObjectiveDetail() {
       await api.deleteObjective(id);
       const objRes = await api.getObjectives();
       dispatch({ type: 'SET_OBJECTIVES', objectives: objRes.objectives || [] });
-      toast.success('Objectif clôturé');
+      toast.success(T('objectiveClosed'));
       navigate('/');
     } catch (err) {
       toast.error(err.message);
@@ -89,12 +94,23 @@ export default function ObjectiveDetail() {
     }
   }
 
+  function getRuleLabel(rule) {
+    if (!rule) return T('noRestriction');
+    switch (rule.type) {
+      case 'none': return T('noRestriction');
+      case 'max_monthly': return `${T('maxMonthly')} : ${formatAmount(rule.max_monthly || rule.value)} ${T('gnf')}`;
+      case 'min_balance': return `${T('minBalanceRule')} : ${formatAmount(rule.min_balance || rule.value)} ${T('gnf')}`;
+      case 'max_amount': return `${T('maxPerWithdraw')} : ${formatAmount(rule.max_withdraw || rule.value)} ${T('gnf')}`;
+      default: return rule.type;
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex flex-col gap-4">
-        <div className="h-48 bg-slate-100 rounded-3xl animate-pulse" />
-        <div className="h-32 bg-slate-100 rounded-3xl animate-pulse" />
-        <div className="h-24 bg-slate-100 rounded-3xl animate-pulse" />
+        <div className="h-48 bg-slate-100 dark:bg-slate-800 rounded-3xl animate-pulse" />
+        <div className="h-32 bg-slate-100 dark:bg-slate-800 rounded-3xl animate-pulse" />
+        <div className="h-24 bg-slate-100 dark:bg-slate-800 rounded-3xl animate-pulse" />
       </div>
     );
   }
@@ -112,22 +128,26 @@ export default function ObjectiveDetail() {
       <div className="flex items-center gap-3">
         <button
           onClick={() => navigate('/')}
-          className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 cursor-pointer shadow-sm"
+          className="w-10 h-10 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 cursor-pointer shadow-sm"
         >
           ←
         </button>
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
             {objective.emoji} {objective.name}
           </h1>
           <p className="text-slate-400 text-sm">
-            {objective.status === 'closed' ? 'Clôturé' : completed ? 'Objectif atteint ✓' : `${days} jours restants`}
+            {objective.status === 'closed'
+              ? T('closed')
+              : completed
+              ? T('objectiveReached')
+              : `${days} ${T('daysLeft')}`}
           </p>
         </div>
         {objective.status !== 'closed' && (
           <button
             onClick={() => setDeleteConfirm(true)}
-            className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-400 hover:bg-red-100 cursor-pointer"
+            className="w-10 h-10 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 cursor-pointer"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
@@ -140,14 +160,14 @@ export default function ObjectiveDetail() {
       <div className="bg-gradient-to-br from-[#1A3C6E] to-[#0f2548] rounded-3xl p-6 text-white relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-white/5 -translate-y-8 translate-x-8" />
         <div className="relative">
-          <p className="text-white/60 text-sm mb-1">Solde actuel</p>
+          <p className="text-white/60 text-sm mb-1">{T('currentBalance')}</p>
           <p className="text-4xl font-bold">
             {formatAmount(objective.current_balance)}
-            <span className="text-white/50 text-xl ml-1">GNF</span>
+            <span className="text-white/50 text-xl ml-1">{T('gnf')}</span>
           </p>
 
           <div className="mt-4 mb-2 flex items-center justify-between text-sm">
-            <span className="text-white/60">Progression</span>
+            <span className="text-white/60">{T('progress')}</span>
             <span className="font-bold">{pct}%</span>
           </div>
           <div className="h-2 bg-white/20 rounded-full overflow-hidden">
@@ -160,21 +180,21 @@ export default function ObjectiveDetail() {
           </div>
 
           <div className="flex justify-between text-xs text-white/50 mt-1">
-            <span>{formatAmount(objective.current_balance)} GNF</span>
-            <span>{formatAmount(objective.target_amount)} GNF</span>
+            <span>{formatAmount(objective.current_balance)} {T('gnf')}</span>
+            <span>{formatAmount(objective.target_amount)} {T('gnf')}</span>
           </div>
 
           <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-white/10">
             <div>
-              <p className="text-white/50 text-xs">Restant</p>
+              <p className="text-white/50 text-xs">{T('remaining')}</p>
               <p className="font-bold text-sm">{formatAmount(remaining)}</p>
             </div>
             <div>
-              <p className="text-white/50 text-xs">Dépôts</p>
+              <p className="text-white/50 text-xs">{T('deposits')}</p>
               <p className="font-bold text-sm">{stats?.deposits_count || 0}</p>
             </div>
             <div>
-              <p className="text-white/50 text-xs">Résistances</p>
+              <p className="text-white/50 text-xs">{T('resistances')}</p>
               <p className="font-bold text-sm">{stats?.resistances || 0}</p>
             </div>
           </div>
@@ -182,18 +202,16 @@ export default function ObjectiveDetail() {
       </div>
 
       {/* Lock info */}
-      <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 flex items-center gap-3">
+      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl px-4 py-3 flex items-center gap-3">
         <span className="text-xl">🔒</span>
         <div>
-          <p className="text-amber-800 text-sm font-medium">
-            {stats?.is_locked ? `Verrouillé jusqu'au ${formatDate(objective.lock_date)}` : 'Déverrouillé'}
+          <p className="text-amber-800 dark:text-amber-400 text-sm font-medium">
+            {stats?.is_locked
+              ? `${T('lockedUntil')} ${formatDate(objective.lock_date)}`
+              : T('unlocked')}
           </p>
-          <p className="text-amber-600 text-xs">
-            Règle : {objective.rule?.type === 'none' ? 'Aucune restriction' :
-              objective.rule?.type === 'max_monthly' ? `Max mensuel : ${formatAmount(objective.rule.value)} GNF` :
-              objective.rule?.type === 'min_balance' ? `Solde min : ${formatAmount(objective.rule.value)} GNF` :
-              objective.rule?.type === 'max_amount' ? `Max/retrait : ${formatAmount(objective.rule.value)} GNF` :
-              objective.rule?.type}
+          <p className="text-amber-600 dark:text-amber-500 text-xs">
+            {T('ruleLabel')} : {getRuleLabel(objective.rule)}
           </p>
         </div>
       </div>
@@ -201,25 +219,22 @@ export default function ObjectiveDetail() {
       {/* Action buttons */}
       {objective.status !== 'closed' && (
         <div className="grid grid-cols-2 gap-3">
-          <Button
-            onClick={() => setDepositModal(true)}
-            className="py-4"
-          >
-            ↑ Déposer
+          <Button onClick={() => setDepositModal(true)} className="py-4">
+            ↑ {T('deposit')}
           </Button>
           <Button
             variant="secondary"
-            onClick={() => toast.info('Le retrait se fait via votre opérateur Mobile Money')}
+            onClick={() => toast.info(T('paymentInfo'))}
             className="py-4"
           >
-            ↓ Retirer
+            ↓ {T('withdraw')}
           </Button>
         </div>
       )}
 
       {/* Transactions */}
       <div>
-        <h2 className="text-lg font-bold text-slate-900 mb-3">{T('transactions')}</h2>
+        <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-3">{T('transactions')}</h2>
         {transactions.length === 0 ? (
           <div className="text-center py-8 text-slate-400">
             <p className="text-3xl mb-2">📋</p>
@@ -233,22 +248,22 @@ export default function ObjectiveDetail() {
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="flex items-center gap-3 bg-white rounded-2xl p-4 border border-slate-100"
+                className="flex items-center gap-3 bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700"
               >
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${
-                  tx.type === 'deposit' ? 'bg-emerald-100' : 'bg-red-100'
+                  tx.type === 'deposit' ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-red-100 dark:bg-red-900/40'
                 }`}>
                   {tx.type === 'deposit' ? '↑' : '↓'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm text-slate-900 truncate">
-                    {tx.type === 'deposit' ? 'Dépôt' : 'Retrait'}
+                  <p className="font-semibold text-sm text-slate-900 dark:text-white truncate">
+                    {tx.type === 'deposit' ? T('deposit_tx') : T('withdrawal_tx')}
                     {tx.note && <span className="text-slate-400 font-normal ml-1">— {tx.note}</span>}
                   </p>
                   <p className="text-xs text-slate-400">{formatDate(tx.created_at)}</p>
                 </div>
                 <p className={`font-bold text-sm ${tx.type === 'deposit' ? 'text-emerald-600' : 'text-red-500'}`}>
-                  {tx.type === 'deposit' ? '+' : '-'}{formatAmount(tx.amount)} GNF
+                  {tx.type === 'deposit' ? '+' : '-'}{formatAmount(tx.amount)} {T('gnf')}
                 </p>
               </motion.div>
             ))}
@@ -257,32 +272,30 @@ export default function ObjectiveDetail() {
       </div>
 
       {/* Deposit Modal */}
-      <Modal open={depositModal} onClose={() => setDepositModal(false)} title="Déposer">
+      <Modal open={depositModal} onClose={() => setDepositModal(false)} title={T('deposit')}>
         <div className="flex flex-col gap-4">
-          <div className="bg-blue-50 rounded-2xl p-4 text-sm text-[#1A3C6E]">
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-4 text-sm text-[#1A3C6E] dark:text-blue-400">
             <p className="font-semibold mb-1">💡 {T('paymentInfo')}</p>
-            <p className="text-blue-700/70 text-xs">
-              Vous serez redirigé vers votre opérateur pour confirmer le paiement.
-            </p>
+            <p className="text-blue-700/70 dark:text-blue-400/70 text-xs">{T('redirectInfo')}</p>
           </div>
 
           <Input
-            label="Montant (minimum 1 000 GNF)"
+            label={T('amountLabel')}
             type="number"
             value={depositForm.amount}
             onChange={e => setDepositForm(f => ({ ...f, amount: e.target.value }))}
             placeholder="10 000"
-            suffix="GNF"
+            suffix={T('gnf')}
           />
 
           {remaining > 0 && (
             <p className="text-xs text-slate-400">
-              Restant pour atteindre l'objectif : {formatAmount(remaining)} GNF
+              {T('remainingLabel')} : {formatAmount(remaining)} {T('gnf')}
             </p>
           )}
 
           <Input
-            label="Numéro Mobile Money (optionnel)"
+            label={T('mobileMoneyPhone')}
             type="tel"
             value={depositForm.phone}
             onChange={e => setDepositForm(f => ({ ...f, phone: e.target.value }))}
@@ -292,7 +305,7 @@ export default function ObjectiveDetail() {
 
           <div className="flex gap-3 pt-2">
             <Button variant="ghost" onClick={() => setDepositModal(false)} className="flex-1">
-              Annuler
+              {T('cancel')}
             </Button>
             <Button loading={actionLoading} onClick={handleDeposit} className="flex-1">
               {T('initiatePayment')}
@@ -302,22 +315,20 @@ export default function ObjectiveDetail() {
       </Modal>
 
       {/* Delete confirm */}
-      <Modal open={deleteConfirm} onClose={() => setDeleteConfirm(false)} title="Clôturer l'objectif ?">
+      <Modal open={deleteConfirm} onClose={() => setDeleteConfirm(false)} title={T('closeObjective')}>
         <div className="flex flex-col gap-4">
-          <p className="text-slate-600 text-sm">
-            Cette action est irréversible. L'objectif sera clôturé et le solde restant sera libéré.
-          </p>
+          <p className="text-slate-600 dark:text-slate-400 text-sm">{T('closeDesc')}</p>
           {objective.current_balance > 0 && (
-            <div className="bg-amber-50 rounded-2xl p-3 text-sm text-amber-800">
-              Solde actuel : <strong>{formatAmount(objective.current_balance)} GNF</strong>
+            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-2xl p-3 text-sm text-amber-800 dark:text-amber-400">
+              {T('currentBalanceLabel')} : <strong>{formatAmount(objective.current_balance)} {T('gnf')}</strong>
             </div>
           )}
           <div className="flex gap-3">
             <Button variant="ghost" onClick={() => setDeleteConfirm(false)} className="flex-1">
-              Annuler
+              {T('cancel')}
             </Button>
             <Button variant="danger" loading={actionLoading} onClick={handleDelete} className="flex-1">
-              Clôturer
+              {T('closeBtn')}
             </Button>
           </div>
         </div>

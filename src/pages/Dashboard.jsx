@@ -16,9 +16,7 @@ export default function Dashboard() {
   const toast = useToast();
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   async function loadData() {
     setLoading(true);
@@ -42,16 +40,19 @@ export default function Dashboard() {
 
   const activeObjectives = state.objectives.filter(o => o.status !== 'closed');
 
+  // BUG 3 FIX: locale-aware date
+  const dateLocale = state.lang === 'en' ? 'en-GB' : 'fr-FR';
+
   return (
     <div className="flex flex-col gap-6">
-      {/* Header greeting */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-slate-400 text-sm">
-            {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+          <p className="text-slate-400 dark:text-slate-500 text-sm capitalize">
+            {new Date().toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
-          <h1 className="text-2xl font-bold text-slate-900 mt-0.5">
-            Bonjour, {state.user?.name?.split(' ')[0] || 'vous'} 👋
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mt-0.5">
+            {T('greeting')} {state.user?.name?.split(' ')[0] || ''} 👋
           </h1>
         </div>
         <button
@@ -91,14 +92,13 @@ export default function Dashboard() {
           </div>
           <p className="text-4xl font-bold tracking-tight">
             {state.balanceVisible ? formatAmount(totalBalance) : '••••••'}
-            <span className="text-white/60 text-xl ml-1">GNF</span>
+            <span className="text-white/60 text-xl ml-1">{T('gnf')}</span>
           </p>
 
-          {/* Score badge */}
           {state.score && (
             <div className="flex items-center gap-2 mt-4">
               <div className="bg-white/20 rounded-full px-3 py-1 text-xs font-semibold">
-                ⚡ Score {state.score.score}/100
+                ⚡ {T('score')} {state.score.score}/100
               </div>
               <div className="bg-white/10 rounded-full px-3 py-1 text-xs text-white/70">
                 {state.score.level}
@@ -106,14 +106,13 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Stats row */}
           <div className="flex gap-4 mt-4 pt-4 border-t border-white/10">
             <div>
-              <p className="text-white/50 text-xs">Objectifs</p>
+              <p className="text-white/50 text-xs">{T('objectives')}</p>
               <p className="font-bold">{activeObjectives.length}</p>
             </div>
             <div>
-              <p className="text-white/50 text-xs">Jours actifs</p>
+              <p className="text-white/50 text-xs">{T('activeDays')}</p>
               <p className="font-bold">{state.user?.days_active || 0}</p>
             </div>
           </div>
@@ -123,7 +122,7 @@ export default function Dashboard() {
       {/* Objectives section */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-slate-900">{T('myObjectives')}</h2>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">{T('myObjectives')}</h2>
           <Button size="sm" onClick={() => navigate('/objective/new')}>
             + {T('newObjective')}
           </Button>
@@ -132,7 +131,7 @@ export default function Dashboard() {
         {loading ? (
           <div className="flex flex-col gap-4">
             {[1, 2].map(i => (
-              <div key={i} className="h-44 bg-slate-100 rounded-3xl animate-pulse" />
+              <div key={i} className="h-44 bg-slate-100 dark:bg-slate-800 rounded-3xl animate-pulse" />
             ))}
           </div>
         ) : activeObjectives.length === 0 ? (
@@ -142,10 +141,10 @@ export default function Dashboard() {
             className="text-center py-16"
           >
             <div className="text-6xl mb-4">🌱</div>
-            <p className="text-slate-600 font-medium">{T('noObjectives')}</p>
-            <p className="text-slate-400 text-sm mt-1">{T('startSaving')}</p>
+            <p className="text-slate-600 dark:text-slate-400 font-medium">{T('noObjectives')}</p>
+            <p className="text-slate-400 dark:text-slate-500 text-sm mt-1">{T('startSaving')}</p>
             <Button className="mt-6" onClick={() => navigate('/objective/new')}>
-              Créer mon premier objectif
+              {T('createFirst')}
             </Button>
           </motion.div>
         ) : (

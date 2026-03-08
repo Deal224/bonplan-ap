@@ -45,7 +45,9 @@ export function PinInput({ value, onChange, length = 4, secret = false }) {
           onPaste={handlePaste}
           className={`
             w-14 h-14 text-center text-2xl font-bold rounded-2xl border-2 outline-none transition-all
-            ${value[i] ? 'border-[#1A3C6E] bg-blue-50 text-[#1A3C6E]' : 'border-slate-200 bg-white text-slate-900'}
+            ${value[i]
+              ? 'border-[#1A3C6E] bg-blue-50 dark:bg-blue-900/30 text-[#1A3C6E] dark:text-blue-400'
+              : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white'}
             focus:border-[#1A3C6E] focus:ring-2 focus:ring-[#1A3C6E]/10
           `}
         />
