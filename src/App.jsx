@@ -5,6 +5,7 @@ import { ToastProvider } from './components/ui/Toast';
 import { Layout } from './components/Layout';
 import AuthPage from './pages/AuthPage';
 import OnboardingPage from './pages/OnboardingPage';
+import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import NewObjective from './pages/NewObjective';
 import ObjectiveDetail from './pages/ObjectiveDetail';
@@ -15,10 +16,16 @@ import Cercles from './pages/Cercles';
 import CercleDetail from './pages/CercleDetail';
 import { api } from './lib/api';
 
+function HomeRoute() {
+  const { state } = useApp();
+  if (state.token) return <Navigate to="/dashboard" replace />;
+  return <LandingPage />;
+}
+
 function OnboardingRoute() {
   const { state } = useApp();
   const onboarded = localStorage.getItem('bonplan_onboarded');
-  if (state.token) return <Navigate to="/" replace />;
+  if (state.token) return <Navigate to="/dashboard" replace />;
   if (onboarded) return <Navigate to="/auth" replace />;
   return <OnboardingPage />;
 }
@@ -44,7 +51,7 @@ function AuthGuard({ children }) {
     }
   }, [state.token]);
 
-  if (!state.token) return <Navigate to="/auth" replace />;
+  if (!state.token) return <Navigate to="/" replace />;
   return children;
 }
 
@@ -52,6 +59,7 @@ function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<HomeRoute />} />
         <Route path="/onboarding" element={<OnboardingRoute />} />
         <Route path="/auth" element={<AuthRoute />} />
         <Route
@@ -60,7 +68,7 @@ function AppRoutes() {
             <AuthGuard>
               <Layout>
                 <Routes>
-                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/objective/new" element={<NewObjective />} />
                   <Route path="/objective/:id" element={<ObjectiveDetail />} />
                   <Route path="/cercles" element={<Cercles />} />
@@ -68,7 +76,7 @@ function AppRoutes() {
                   <Route path="/history" element={<History />} />
                   <Route path="/score" element={<Score />} />
                   <Route path="/profile" element={<Profile />} />
-                  <Route path="*" element={<Navigate to="/" replace />} />
+                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
                 </Routes>
               </Layout>
             </AuthGuard>
