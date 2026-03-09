@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 
 const slides = [
   {
@@ -22,103 +21,93 @@ const slides = [
 
 export default function OnboardingPage() {
   const [current, setCurrent] = useState(0);
-  const [direction, setDirection] = useState(1);
   const navigate = useNavigate();
 
   const finish = () => {
     localStorage.setItem('bonplan_onboarded', 'true');
-    navigate('/auth', { replace: true });
+    navigate('/auth');
   };
 
   const next = () => {
-    if (current < slides.length - 1) {
-      setDirection(1);
+    if (current < 2) {
       setCurrent(current + 1);
     } else {
       finish();
     }
   };
 
-  const variants = {
-    enter: (dir) => ({ x: dir > 0 ? '100%' : '-100%', opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (dir) => ({ x: dir > 0 ? '-100%' : '100%', opacity: 0 }),
-  };
-
   const slide = slides[current];
 
   return (
     <div
-      className="relative flex flex-col min-h-screen overflow-hidden"
-      style={{ background: 'linear-gradient(160deg, #1A4731 0%, #2E7D52 50%, #FFBE00 100%)' }}
+      style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(160deg, #1A4731 0%, #2E7D52 50%, #FFBE00 100%)',
+        display: 'flex',
+        flexDirection: 'column',
+        fontFamily: 'sans-serif',
+      }}
     >
-      {/* Passer */}
-      <div className="flex justify-end p-6 z-10">
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '24px' }}>
         <button
           onClick={finish}
-          className="text-white/70 text-sm font-medium hover:text-white transition-colors"
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'rgba(255,255,255,0.75)',
+            fontSize: '15px',
+            cursor: 'pointer',
+          }}
         >
           Passer
         </button>
       </div>
 
-      {/* Slide area */}
-      <div className="flex-1 flex flex-col items-center justify-center px-8 relative overflow-hidden">
-        <AnimatePresence mode="wait" custom={direction}>
-          <motion.div
-            key={current}
-            custom={direction}
-            variants={variants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ type: 'tween', duration: 0.35, ease: 'easeInOut' }}
-            className="flex flex-col items-center text-center absolute inset-x-8"
-          >
-            {/* Icon */}
-            <motion.div
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.15, type: 'spring', stiffness: 200 }}
-              className="text-8xl mb-10 select-none"
-              style={{ filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.25))' }}
-            >
-              {slide.icon}
-            </motion.div>
-
-            {/* Title */}
-            <motion.h1
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.25 }}
-              className="text-white text-2xl font-bold mb-4 leading-tight"
-            >
-              {slide.title}
-            </motion.h1>
-
-            {/* Text */}
-            <motion.p
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.35 }}
-              className="text-white/80 text-base leading-relaxed max-w-xs"
-            >
-              {slide.text}
-            </motion.p>
-          </motion.div>
-        </AnimatePresence>
+      {/* Content */}
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '0 32px',
+          textAlign: 'center',
+        }}
+      >
+        <div style={{ fontSize: '96px', marginBottom: '40px' }}>{slide.icon}</div>
+        <h1 style={{ color: 'white', fontSize: '24px', fontWeight: 'bold', marginBottom: '16px', lineHeight: 1.3 }}>
+          {slide.title}
+        </h1>
+        <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '16px', lineHeight: 1.6, maxWidth: '300px' }}>
+          {slide.text}
+        </p>
       </div>
 
-      {/* Bottom controls */}
-      <div className="flex flex-col items-center gap-6 pb-12 px-8 z-10">
+      {/* Footer */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '24px',
+          padding: '0 32px 48px',
+        }}
+      >
         {/* Dots */}
-        <div className="flex gap-2">
+        <div style={{ display: 'flex', gap: '8px' }}>
           {slides.map((_, i) => (
-            <motion.div
+            <div
               key={i}
-              animate={{ width: i === current ? 24 : 8, opacity: i === current ? 1 : 0.4 }}
-              transition={{ duration: 0.3 }}
-              className="h-2 rounded-full bg-white"
+              style={{
+                height: '8px',
+                width: i === current ? '24px' : '8px',
+                borderRadius: '4px',
+                background: 'white',
+                opacity: i === current ? 1 : 0.4,
+                transition: 'width 0.3s, opacity 0.3s',
+              }}
             />
           ))}
         </div>
@@ -126,10 +115,20 @@ export default function OnboardingPage() {
         {/* Button */}
         <button
           onClick={next}
-          className="w-full max-w-xs rounded-2xl py-4 font-bold text-base transition-transform active:scale-95"
-          style={{ background: 'white', color: '#1A4731' }}
+          style={{
+            width: '100%',
+            maxWidth: '320px',
+            padding: '16px',
+            borderRadius: '16px',
+            border: 'none',
+            background: 'white',
+            color: '#1A4731',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+          }}
         >
-          {current < slides.length - 1 ? 'Suivant' : 'Commencer'}
+          {current < 2 ? 'Suivant' : 'Commencer'}
         </button>
       </div>
     </div>
