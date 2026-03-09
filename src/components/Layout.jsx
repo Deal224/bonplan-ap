@@ -83,7 +83,7 @@ function NotificationsBell() {
 
   const unread = notifs.filter(n => !n.read).length;
 
-  const typeIcon = { leave_request: '⏳', leave_approved: '✅', leave_refused: '❌', circle_invite: '🤝' };
+  const typeIcon = { leave_request: '⏳', leave_approved: '✅', leave_refused: '❌', circle_invite: '🤝', close_vote: '🗳️', circle_closed: '🔒' };
 
   async function handleAcceptInvite(n) {
     try {
@@ -101,6 +101,17 @@ function NotificationsBell() {
     try {
       await api.declineInvite(n.tontine_id);
       setNotifs(ns => ns.filter(x => x.id !== n.id));
+    } catch (e) {
+      toast.error(e.message);
+    }
+  }
+
+  async function handleVoteClose(n, vote) {
+    try {
+      const res = await api.voteClose(n.tontine_id, vote);
+      toast.success(res.message);
+      setNotifs(ns => ns.filter(x => x.id !== n.id));
+      if (res.closed) navigate(`/cercles`);
     } catch (e) {
       toast.error(e.message);
     }
@@ -161,17 +172,25 @@ function NotificationsBell() {
                       </p>
                       {n.type === 'circle_invite' && !n.read && (
                         <div className="flex gap-2 mt-2">
-                          <button
-                            onClick={() => handleAcceptInvite(n)}
-                            className="text-xs bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-lg font-semibold hover:bg-emerald-200 cursor-pointer"
-                          >
+                          <button onClick={() => handleAcceptInvite(n)}
+                            className="text-xs bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-lg font-semibold hover:bg-emerald-200 cursor-pointer">
                             ✓ Rejoindre
                           </button>
-                          <button
-                            onClick={() => handleDeclineInvite(n)}
-                            className="text-xs bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 px-3 py-1 rounded-lg font-semibold hover:bg-red-200 cursor-pointer"
-                          >
+                          <button onClick={() => handleDeclineInvite(n)}
+                            className="text-xs bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 px-3 py-1 rounded-lg font-semibold hover:bg-red-200 cursor-pointer">
                             ✗ Refuser
+                          </button>
+                        </div>
+                      )}
+                      {n.type === 'close_vote' && !n.read && (
+                        <div className="flex gap-2 mt-2">
+                          <button onClick={() => handleVoteClose(n, true)}
+                            className="text-xs bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-lg font-semibold hover:bg-emerald-200 cursor-pointer">
+                            ✓ J'accepte
+                          </button>
+                          <button onClick={() => handleVoteClose(n, false)}
+                            className="text-xs bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 px-3 py-1 rounded-lg font-semibold hover:bg-red-200 cursor-pointer">
+                            ✗ Je refuse
                           </button>
                         </div>
                       )}

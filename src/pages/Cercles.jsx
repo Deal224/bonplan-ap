@@ -24,7 +24,7 @@ export default function Cercles() {
   const [createModal, setCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({
-    name: '', emoji: '🤝', target_amount: '', lock_date: '', member_target: '',
+    name: '', emoji: '🤝', description: '', target_amount: '', lock_date: '', member_target: '',
   });
   const [errors, setErrors] = useState({});
 
@@ -50,6 +50,7 @@ export default function Cercles() {
   function validate() {
     const errs = {};
     if (!form.name.trim()) errs.name = T('fillFields');
+    if (!form.description.trim() || form.description.trim().length < 5) errs.description = 'Description requise (min. 5 caractères).';
     if (!form.target_amount || Number(form.target_amount) < 1000) errs.target_amount = T('minAmount');
     if (!form.lock_date) errs.lock_date = T('fillFields');
     else if (new Date(form.lock_date) <= new Date()) errs.lock_date = T('lockDate');
@@ -64,13 +65,14 @@ export default function Cercles() {
       const res = await api.createTontine({
         name: form.name.trim(),
         emoji: form.emoji,
+        description: form.description.trim(),
         target_amount: parseInt(form.target_amount, 10),
         lock_date: form.lock_date,
         ...(form.member_target ? { member_target: parseInt(form.member_target, 10) } : {}),
       });
       toast.success(T('cercleCreated'));
       setCreateModal(false);
-      setForm({ name: '', emoji: '🤝', target_amount: '', lock_date: '', member_target: '' });
+      setForm({ name: '', emoji: '🤝', description: '', target_amount: '', lock_date: '', member_target: '' });
       navigate(`/cercle/${res.tontine.id}`);
     } catch (err) {
       toast.error(err.message);
@@ -155,6 +157,17 @@ export default function Cercles() {
             placeholder="Ex: Famille Diallo, Amis bureau..."
             error={errors.name}
           />
+          <div>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-1">Description *</label>
+            <textarea
+              value={form.description}
+              onChange={e => set('description', e.target.value)}
+              placeholder="Décrivez l'objectif commun de ce cercle..."
+              rows={3}
+              className={`w-full rounded-2xl border px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white dark:bg-slate-700 dark:text-white transition-colors ${errors.description ? 'border-red-400' : 'border-slate-200 dark:border-slate-600'}`}
+            />
+            {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description}</p>}
+          </div>
           <Input
             label={T('cercleTarget')}
             type="number"
@@ -180,6 +193,10 @@ export default function Cercles() {
             error={errors.lock_date}
             min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
           />
+
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-2xl p-3 text-xs text-amber-800 dark:text-amber-300">
+            💡 <strong>À la fermeture</strong>, les fonds collectés seront remis au créateur du cercle. Un vote majoritaire des membres sera requis.
+          </div>
 
           <div className="flex gap-3 pt-1">
             <Button variant="ghost" onClick={() => setCreateModal(false)} className="flex-1">
