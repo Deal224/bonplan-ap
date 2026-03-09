@@ -93,6 +93,8 @@ export const api = {
   closeTontine: (id) => request(`/tontines/${id}`, { method: 'DELETE' }),
   leaveTontine: (id) => request(`/tontines/${id}/leave`, { method: 'POST' }),
   approveLeave: (id, body) => request(`/tontines/${id}/approve-leave`, { method: 'POST', body: JSON.stringify(body) }),
+  acceptInvite: (id) => request(`/tontines/${id}/accept-invite`, { method: 'POST' }),
+  declineInvite: (id) => request(`/tontines/${id}/decline-invite`, { method: 'POST' }),
 
   // Notifications
   getNotifications: () => request('/notifications'),

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '../lib/store';
 import { useLang } from '../lib/i18n';
 import { api } from '../lib/api';
+import { useToast } from './ui/Toast';
 
 function NavItem({ icon, label, active, onClick }) {
   return (
@@ -42,6 +43,8 @@ function NotificationsBell() {
   const [notifs, setNotifs] = useState([]);
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+  const navigate = useNavigate();
+  const toast = useToast();
 
   useEffect(() => {
     loadNotifs();
@@ -80,7 +83,28 @@ function NotificationsBell() {
 
   const unread = notifs.filter(n => !n.read).length;
 
-  const typeIcon = { leave_request: '⏳', leave_approved: '✅', leave_refused: '❌' };
+  const typeIcon = { leave_request: '⏳', leave_approved: '✅', leave_refused: '❌', circle_invite: '🤝' };
+
+  async function handleAcceptInvite(n) {
+    try {
+      const res = await api.acceptInvite(n.tontine_id);
+      toast.success(res.message);
+      setNotifs(ns => ns.filter(x => x.id !== n.id));
+      setOpen(false);
+      navigate(`/cercle/${n.tontine_id}`);
+    } catch (e) {
+      toast.error(e.message);
+    }
+  }
+
+  async function handleDeclineInvite(n) {
+    try {
+      await api.declineInvite(n.tontine_id);
+      setNotifs(ns => ns.filter(x => x.id !== n.id));
+    } catch (e) {
+      toast.error(e.message);
+    }
+  }
 
   return (
     <div ref={ref} className="relative">
@@ -121,10 +145,9 @@ function NotificationsBell() {
                 <p className="text-center text-slate-400 text-sm py-8">Aucune notification</p>
               ) : (
                 notifs.map(n => (
-                  <button
+                  <div
                     key={n.id}
-                    onClick={() => markRead(n.id)}
-                    className={`w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer border-b border-slate-50 dark:border-slate-700/50 last:border-0 ${
+                    className={`px-4 py-3 flex items-start gap-3 border-b border-slate-50 dark:border-slate-700/50 last:border-0 ${
                       !n.read ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
                     }`}
                   >
@@ -136,11 +159,27 @@ function NotificationsBell() {
                       <p className="text-xs text-slate-400 mt-0.5">
                         {new Date(n.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                       </p>
+                      {n.type === 'circle_invite' && !n.read && (
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            onClick={() => handleAcceptInvite(n)}
+                            className="text-xs bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-lg font-semibold hover:bg-emerald-200 cursor-pointer"
+                          >
+                            ✓ Rejoindre
+                          </button>
+                          <button
+                            onClick={() => handleDeclineInvite(n)}
+                            className="text-xs bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 px-3 py-1 rounded-lg font-semibold hover:bg-red-200 cursor-pointer"
+                          >
+                            ✗ Refuser
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    {!n.read && (
-                      <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1.5" />
+                    {!n.read && n.type !== 'circle_invite' && (
+                      <button onClick={() => markRead(n.id)} className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1.5 cursor-pointer" />
                     )}
-                  </button>
+                  </div>
                 ))
               )}
             </div>

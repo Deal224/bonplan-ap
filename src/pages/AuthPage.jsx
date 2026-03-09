@@ -33,7 +33,13 @@ export default function AuthPage() {
         ? await api.login({ phone: form.phone, pin: form.pin })
         : await api.register({ phone: form.phone, pin: form.pin, name: form.name });
       dispatch({ type: 'SET_AUTH', token: res.token, user: res.user });
-      toast.success(mode === 'login' ? 'Bienvenue ! 👋' : 'Compte créé ! 🎉');
+      if (mode === 'login') {
+        toast.success('Bienvenue ! 👋');
+      } else if (res.pending_invites_count > 0) {
+        toast.success(`Compte créé ! 🎉  Tu as ${res.pending_invites_count} invitation(s) de cercle qui t'attendent 🤝`);
+      } else {
+        toast.success('Compte créé ! 🎉');
+      }
     } catch (err) {
       setError(err.message);
     } finally {

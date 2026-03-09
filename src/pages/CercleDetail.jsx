@@ -157,15 +157,15 @@ export default function CercleDetail() {
     if (!invitePhone.trim()) { toast.error(T('fillFields')); return; }
     setActionLoading(true);
     try {
-      await api.inviteMember(id, {
+      const res = await api.inviteMember(id, {
         phone: invitePhone.trim(),
         ...(inviteMemberTarget ? { member_target: parseInt(inviteMemberTarget, 10) } : {}),
       });
-      toast.success(T('memberAdded'));
+      toast.success(res.message);
       setInviteModal(false);
       setInvitePhone('');
       setInviteMemberTarget('');
-      await loadData();
+      if (!res.pending) await loadData();
     } catch (err) {
       toast.error(err.message);
     } finally {
