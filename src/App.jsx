@@ -15,6 +15,22 @@ import Cercles from './pages/Cercles';
 import CercleDetail from './pages/CercleDetail';
 import { api } from './lib/api';
 
+function OnboardingRoute() {
+  const { state } = useApp();
+  const onboarded = localStorage.getItem('bonplan_onboarded');
+  if (state.token) return <Navigate to="/" replace />;
+  if (onboarded) return <Navigate to="/auth" replace />;
+  return <OnboardingPage />;
+}
+
+function AuthRoute() {
+  const { state } = useApp();
+  const onboarded = localStorage.getItem('bonplan_onboarded');
+  if (state.token) return <Navigate to="/" replace />;
+  if (!onboarded) return <Navigate to="/onboarding" replace />;
+  return <AuthPage />;
+}
+
 function AuthGuard({ children }) {
   const { state, dispatch } = useApp();
 
@@ -33,25 +49,11 @@ function AuthGuard({ children }) {
 }
 
 function AppRoutes() {
-  const { state } = useApp();
-
-  const onboarded = localStorage.getItem('bonplan_onboarded');
-
   return (
     <BrowserRouter>
       <Routes>
-        <Route
-          path="/onboarding"
-          element={state.token ? <Navigate to="/" replace /> : <OnboardingPage />}
-        />
-        <Route
-          path="/auth"
-          element={
-            state.token ? <Navigate to="/" replace /> :
-            !onboarded ? <Navigate to="/onboarding" replace /> :
-            <AuthPage />
-          }
-        />
+        <Route path="/onboarding" element={<OnboardingRoute />} />
+        <Route path="/auth" element={<AuthRoute />} />
         <Route
           path="/*"
           element={
