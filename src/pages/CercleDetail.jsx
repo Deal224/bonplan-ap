@@ -4,37 +4,41 @@ import { motion } from 'framer-motion';
 import { useApp } from '../lib/store';
 import { useLang } from '../lib/i18n';
 import { api } from '../lib/api';
-import { formatAmount, formatDate, progressPct, daysUntil } from '../lib/utils';
+import { formatAmount, formatDate, daysUntil } from '../lib/utils';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { useToast } from '../components/ui/Toast';
 
-function MemberRow({ member, isCurrentUser, isCreator }) {
+function MemberRow({ member, isCurrentUser, isCreator, onApprove, onRefuse, viewerIsCreator }) {
   const pct = member.target > 0
     ? Math.min(100, Math.round((member.balance / member.target) * 100))
     : member.balance > 0 ? 100 : 0;
+
+  const isPendingLeave = member.status === 'pending_leave';
 
   return (
     <motion.div
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       className={`flex items-center gap-3 p-4 rounded-2xl border transition-colors ${
-        isCurrentUser
+        isPendingLeave
+          ? 'border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20'
+          : isCurrentUser
           ? 'border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-900/20'
           : 'border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800'
       }`}
     >
       {/* Avatar */}
       <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0 ${
-        isCurrentUser ? 'bg-violet-600' : 'bg-gradient-to-br from-slate-400 to-slate-500'
+        isPendingLeave ? 'bg-amber-500' : isCurrentUser ? 'bg-violet-600' : 'bg-gradient-to-br from-slate-400 to-slate-500'
       }`}>
         {member.users?.name?.[0]?.toUpperCase() || '?'}
       </div>
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <p className="font-semibold text-sm text-slate-900 dark:text-white truncate">
             {member.users?.name || 'Membre'}
           </p>
@@ -46,16 +50,40 @@ function MemberRow({ member, isCurrentUser, isCreator }) {
               créateur
             </span>
           )}
+          {isPendingLeave && (
+            <span className="text-xs bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full">
+              ⏳ retrait en attente
+            </span>
+          )}
         </div>
+
         {/* Mini progress bar */}
         <div className="h-1 bg-slate-100 dark:bg-slate-700 rounded-full mt-1.5 overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${pct}%` }}
             transition={{ duration: 0.7, ease: 'easeOut' }}
-            className={`h-full rounded-full ${pct >= 100 ? 'bg-emerald-500' : 'bg-violet-500'}`}
+            className={`h-full rounded-full ${pct >= 100 ? 'bg-emerald-500' : isPendingLeave ? 'bg-amber-400' : 'bg-violet-500'}`}
           />
         </div>
+
+        {/* Creator approve/refuse buttons */}
+        {isPendingLeave && viewerIsCreator && (
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={() => onApprove(member.id)}
+              className="text-xs bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded-lg font-semibold hover:bg-emerald-200 cursor-pointer"
+            >
+              ✓ Accepter
+            </button>
+            <button
+              onClick={() => onRefuse(member.id)}
+              className="text-xs bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 px-2 py-1 rounded-lg font-semibold hover:bg-red-200 cursor-pointer"
+            >
+              ✗ Refuser
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Amounts */}
@@ -84,6 +112,7 @@ export default function CercleDetail() {
   const [depositModal, setDepositModal] = useState(false);
   const [inviteModal, setInviteModal] = useState(false);
   const [closeConfirm, setCloseConfirm] = useState(false);
+  const [leaveConfirm, setLeaveConfirm] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
   const [depositNote, setDepositNote] = useState('');
@@ -108,10 +137,7 @@ export default function CercleDetail() {
 
   async function handleDeposit() {
     const amt = parseInt(depositAmount, 10);
-    if (!depositAmount || amt < 1000) {
-      toast.error(T('minAmount'));
-      return;
-    }
+    if (!depositAmount || amt < 1000) { toast.error(T('minAmount')); return; }
     setActionLoading(true);
     try {
       const res = await api.tontineDeposit(id, amt, depositNote);
@@ -128,10 +154,7 @@ export default function CercleDetail() {
   }
 
   async function handleInvite() {
-    if (!invitePhone.trim()) {
-      toast.error(T('fillFields'));
-      return;
-    }
+    if (!invitePhone.trim()) { toast.error(T('fillFields')); return; }
     setActionLoading(true);
     try {
       await api.inviteMember(id, {
@@ -163,6 +186,30 @@ export default function CercleDetail() {
     }
   }
 
+  async function handleLeave() {
+    setActionLoading(true);
+    try {
+      await api.leaveTontine(id);
+      toast.success('Demande envoyée au créateur.');
+      setLeaveConfirm(false);
+      await loadData();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleApproveLeave(memberId, approved) {
+    try {
+      const res = await api.approveLeave(id, { member_id: memberId, approved });
+      toast.success(res.message);
+      await loadData();
+    } catch (err) {
+      toast.error(err.message);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex flex-col gap-4">
@@ -175,13 +222,14 @@ export default function CercleDetail() {
 
   if (!tontine) return null;
 
-  const members = tontine.tontine_members || [];
+  const members = (tontine.tontine_members || []).filter(m => m.status !== 'left');
   const myMember = members.find(m => m.user_id === state.user?.id);
   const myPct = myMember && myMember.target > 0
     ? Math.min(100, Math.round((myMember.balance / myMember.target) * 100))
     : 0;
   const days = daysUntil(tontine.lock_date);
   const isClosed = tontine.status === 'closed';
+  const pendingLeaveCount = members.filter(m => m.status === 'pending_leave').length;
 
   return (
     <div className="flex flex-col gap-5 max-w-lg mx-auto">
@@ -213,6 +261,13 @@ export default function CercleDetail() {
         )}
       </div>
 
+      {/* Pending leave requests banner for creator */}
+      {stats?.is_creator && pendingLeaveCount > 0 && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-2xl p-3 flex items-center gap-2 text-amber-700 dark:text-amber-400 text-sm font-medium">
+          ⏳ {pendingLeaveCount} demande{pendingLeaveCount > 1 ? 's' : ''} de retrait en attente · voir ci-dessous
+        </div>
+      )}
+
       {/* Global progress card */}
       <div className="bg-gradient-to-br from-violet-600 to-purple-700 rounded-3xl p-6 text-white relative overflow-hidden shadow-lg">
         <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-white/5 -translate-y-8 translate-x-8" />
@@ -240,7 +295,6 @@ export default function CercleDetail() {
             <span>{formatAmount(tontine.target_amount)} GNF</span>
           </div>
 
-          {/* Ma contribution */}
           {myMember && (
             <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-2 gap-3">
               <div>
@@ -259,17 +313,29 @@ export default function CercleDetail() {
       {/* Actions */}
       {!isClosed && myMember && (
         <div className="grid grid-cols-2 gap-3">
-          <Button
-            onClick={() => setDepositModal(true)}
-            style={{ background: 'linear-gradient(135deg, #7C3AED, #9333EA)' }}
-            className="py-4"
-          >
-            ↑ {T('contribute')}
-          </Button>
+          {myMember.status === 'active' && (
+            <Button
+              onClick={() => setDepositModal(true)}
+              style={{ background: 'linear-gradient(135deg, #7C3AED, #9333EA)' }}
+              className="py-4"
+            >
+              ↑ {T('contribute')}
+            </Button>
+          )}
           {stats?.is_creator && (
             <Button variant="secondary" onClick={() => setInviteModal(true)} className="py-4">
               + {T('inviteMember')}
             </Button>
+          )}
+          {!stats?.is_creator && myMember.status === 'active' && (
+            <Button variant="ghost" onClick={() => setLeaveConfirm(true)} className="py-4 text-red-500 border-red-200">
+              🚪 Quitter
+            </Button>
+          )}
+          {!stats?.is_creator && myMember.status === 'pending_leave' && (
+            <div className="col-span-2 text-center text-sm text-amber-600 dark:text-amber-400 font-medium py-3 bg-amber-50 dark:bg-amber-900/20 rounded-2xl">
+              ⏳ Retrait en attente d'approbation...
+            </div>
           )}
         </div>
       )}
@@ -278,12 +344,15 @@ export default function CercleDetail() {
       <div>
         <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-3">{T('members')}</h2>
         <div className="flex flex-col gap-2">
-          {members.map((m, i) => (
+          {members.map((m) => (
             <MemberRow
               key={m.id}
               member={m}
               isCurrentUser={m.user_id === state.user?.id}
               isCreator={m.user_id === tontine.creator_id}
+              viewerIsCreator={stats?.is_creator}
+              onApprove={(memberId) => handleApproveLeave(memberId, true)}
+              onRefuse={(memberId) => handleApproveLeave(memberId, false)}
             />
           ))}
         </div>
@@ -303,24 +372,12 @@ export default function CercleDetail() {
               {T('yourShare')} : {formatAmount(myMember.balance)} / {formatAmount(myMember.target)} GNF ({myPct}%)
             </div>
           )}
-          <Input
-            label={T('amountLabel')}
-            type="number"
-            value={depositAmount}
-            onChange={e => setDepositAmount(e.target.value)}
-            placeholder="10 000"
-            suffix="GNF"
-          />
-          <Input
-            label={T('note')}
-            value={depositNote}
-            onChange={e => setDepositNote(e.target.value)}
-            placeholder="Ex: cotisation du mois..."
-          />
+          <Input label={T('amountLabel')} type="number" value={depositAmount}
+            onChange={e => setDepositAmount(e.target.value)} placeholder="10 000" suffix="GNF" />
+          <Input label={T('note')} value={depositNote}
+            onChange={e => setDepositNote(e.target.value)} placeholder="Ex: cotisation du mois..." />
           <div className="flex gap-3 pt-1">
-            <Button variant="ghost" onClick={() => setDepositModal(false)} className="flex-1">
-              {T('cancel')}
-            </Button>
+            <Button variant="ghost" onClick={() => setDepositModal(false)} className="flex-1">{T('cancel')}</Button>
             <Button loading={actionLoading} onClick={handleDeposit} className="flex-1"
               style={{ background: 'linear-gradient(135deg, #7C3AED, #9333EA)' }}>
               ↑ {T('contribute')}
@@ -335,28 +392,35 @@ export default function CercleDetail() {
           <div className="bg-[#FFF8E1] dark:bg-green-900/20 rounded-2xl p-3 text-xs text-[#1A4731] dark:text-green-400">
             💡 Le membre doit avoir un compte BON PLAN actif.
           </div>
-          <Input
-            label={T('inviteByPhone')}
-            type="tel"
-            value={invitePhone}
-            onChange={e => setInvitePhone(e.target.value)}
-            placeholder="0622 345 678"
-            prefix="📱"
-          />
-          <Input
-            label={T('memberTarget') + ' (optionnel)'}
-            type="number"
-            value={inviteMemberTarget}
+          <Input label={T('inviteByPhone')} type="tel" value={invitePhone}
+            onChange={e => setInvitePhone(e.target.value)} placeholder="0622 345 678" prefix="📱" />
+          <Input label={T('memberTarget') + ' (optionnel)'} type="number" value={inviteMemberTarget}
             onChange={e => setInviteMemberTarget(e.target.value)}
-            placeholder={String(tontine.target_amount)}
-            suffix="GNF"
-          />
+            placeholder={String(tontine.target_amount)} suffix="GNF" />
           <div className="flex gap-3 pt-1">
-            <Button variant="ghost" onClick={() => setInviteModal(false)} className="flex-1">
-              {T('cancel')}
-            </Button>
+            <Button variant="ghost" onClick={() => setInviteModal(false)} className="flex-1">{T('cancel')}</Button>
             <Button loading={actionLoading} onClick={handleInvite} className="flex-1">
               + {T('inviteMember')}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Leave confirm Modal */}
+      <Modal open={leaveConfirm} onClose={() => setLeaveConfirm(false)} title="Quitter le cercle">
+        <div className="flex flex-col gap-4">
+          <p className="text-slate-600 dark:text-slate-400 text-sm">
+            Votre demande sera envoyée au créateur du cercle. Il devra l'approuver pour finaliser votre retrait.
+          </p>
+          {myMember && myMember.balance > 0 && (
+            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl p-3 text-sm text-emerald-700 dark:text-emerald-400">
+              💰 Si approuvé, votre solde de <strong>{formatAmount(myMember.balance)} GNF</strong> vous sera restitué.
+            </div>
+          )}
+          <div className="flex gap-3">
+            <Button variant="ghost" onClick={() => setLeaveConfirm(false)} className="flex-1">{T('cancel')}</Button>
+            <Button variant="danger" loading={actionLoading} onClick={handleLeave} className="flex-1">
+              🚪 Envoyer la demande
             </Button>
           </div>
         </div>
@@ -367,9 +431,7 @@ export default function CercleDetail() {
         <div className="flex flex-col gap-4">
           <p className="text-slate-600 dark:text-slate-400 text-sm">{T('closeCercleDesc')}</p>
           <div className="flex gap-3">
-            <Button variant="ghost" onClick={() => setCloseConfirm(false)} className="flex-1">
-              {T('cancel')}
-            </Button>
+            <Button variant="ghost" onClick={() => setCloseConfirm(false)} className="flex-1">{T('cancel')}</Button>
             <Button variant="danger" loading={actionLoading} onClick={handleClose} className="flex-1">
               {T('closeCercle')}
             </Button>

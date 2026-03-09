@@ -91,4 +91,11 @@ export const api = {
     body: JSON.stringify({ amount: parseInt(amount, 10), ...(note ? { note: String(note) } : {}) }),
   }),
   closeTontine: (id) => request(`/tontines/${id}`, { method: 'DELETE' }),
+  leaveTontine: (id) => request(`/tontines/${id}/leave`, { method: 'POST' }),
+  approveLeave: (id, body) => request(`/tontines/${id}/approve-leave`, { method: 'POST', body: JSON.stringify(body) }),
+
+  // Notifications
+  getNotifications: () => request('/notifications'),
+  markNotificationRead: (id) => request(`/notifications/${id}/read`, { method: 'POST' }),
+  markAllNotificationsRead: () => request('/notifications/read-all', { method: 'POST' }),
 };

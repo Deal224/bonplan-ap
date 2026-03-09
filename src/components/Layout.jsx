@@ -1,7 +1,9 @@
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '../lib/store';
 import { useLang } from '../lib/i18n';
+import { api } from '../lib/api';
 
 function NavItem({ icon, label, active, onClick }) {
   return (
@@ -29,12 +31,125 @@ function NavItem({ icon, label, active, onClick }) {
 }
 
 const NAV_ITEMS = [
-  { path: '/', icon: '🏠', labelKey: 'home' },
+  { path: '/dashboard', icon: '🏠', labelKey: 'home' },
   { path: '/cercles', icon: '🤝', labelKey: 'cercles' },
   { path: '/history', icon: '📋', labelKey: 'history' },
   { path: '/score', icon: '⚡', labelKey: 'score' },
   { path: '/profile', icon: '👤', labelKey: 'profile' },
 ];
+
+function NotificationsBell() {
+  const [notifs, setNotifs] = useState([]);
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    loadNotifs();
+    const iv = setInterval(loadNotifs, 30000);
+    return () => clearInterval(iv);
+  }, []);
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  async function loadNotifs() {
+    try {
+      const res = await api.getNotifications();
+      setNotifs(res.notifications || []);
+    } catch (e) {}
+  }
+
+  async function markRead(id) {
+    try {
+      await api.markNotificationRead(id);
+      setNotifs(ns => ns.map(n => n.id === id ? { ...n, read: true } : n));
+    } catch (e) {}
+  }
+
+  async function markAllRead() {
+    try {
+      await api.markAllNotificationsRead();
+      setNotifs(ns => ns.map(n => ({ ...n, read: true })));
+    } catch (e) {}
+  }
+
+  const unread = notifs.filter(n => !n.read).length;
+
+  const typeIcon = { leave_request: '⏳', leave_approved: '✅', leave_refused: '❌' };
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="relative w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors cursor-pointer"
+      >
+        <span className="text-lg">🔔</span>
+        {unread > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+            {unread > 9 ? '9+' : unread}
+          </span>
+        )}
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className="absolute right-0 top-11 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 z-50 overflow-hidden"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+              <span className="font-bold text-sm text-slate-900 dark:text-white">Notifications</span>
+              {unread > 0 && (
+                <button onClick={markAllRead} className="text-xs text-[#1A4731] dark:text-yellow-400 font-medium hover:underline cursor-pointer">
+                  Tout lire
+                </button>
+              )}
+            </div>
+
+            {/* List */}
+            <div className="max-h-80 overflow-y-auto">
+              {notifs.length === 0 ? (
+                <p className="text-center text-slate-400 text-sm py-8">Aucune notification</p>
+              ) : (
+                notifs.map(n => (
+                  <button
+                    key={n.id}
+                    onClick={() => markRead(n.id)}
+                    className={`w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer border-b border-slate-50 dark:border-slate-700/50 last:border-0 ${
+                      !n.read ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
+                    }`}
+                  >
+                    <span className="text-lg flex-shrink-0 mt-0.5">{typeIcon[n.type] || '🔔'}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm leading-snug ${!n.read ? 'font-semibold text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
+                        {n.content}
+                      </p>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {new Date(n.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                    {!n.read && (
+                      <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1.5" />
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export function Layout({ children }) {
   const { state } = useApp();
@@ -43,7 +158,7 @@ export function Layout({ children }) {
   const navigate = useNavigate();
 
   const currentRoot = '/' + location.pathname.split('/')[1];
-  const activeNav = NAV_ITEMS.find(n => n.path === currentRoot || (n.path === '/' && location.pathname === '/'))?.path || '/';
+  const activeNav = NAV_ITEMS.find(n => n.path === currentRoot)?.path || '/dashboard';
 
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900">
@@ -69,14 +184,23 @@ export function Layout({ children }) {
               </button>
             ))}
           </nav>
-          <div className="w-8 h-8 rounded-full bg-[#1A4731] text-white flex items-center justify-center text-xs font-bold">
-            {state.user?.name?.[0]?.toUpperCase()}
+          <div className="flex items-center gap-3">
+            <NotificationsBell />
+            <div className="w-8 h-8 rounded-full bg-[#1A4731] text-white flex items-center justify-center text-xs font-bold">
+              {state.user?.name?.[0]?.toUpperCase()}
+            </div>
           </div>
         </div>
       </header>
 
+      {/* Mobile top bar (notifications only) */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border-b border-slate-100 dark:border-slate-700 px-4 h-12 flex items-center justify-between">
+        <span className="font-bold text-[#1A4731] dark:text-yellow-400 text-sm">💰 BON PLAN</span>
+        <NotificationsBell />
+      </div>
+
       {/* Main content */}
-      <main className="flex-1 md:pt-16 md:pb-4">
+      <main className="flex-1 md:pt-16 md:pb-4 pt-12">
         <div className="max-w-2xl mx-auto px-4 py-6 pb-28 md:pb-8">
           <AnimatePresence mode="wait">
             <motion.div
@@ -100,7 +224,7 @@ export function Layout({ children }) {
               key={item.path}
               icon={item.icon}
               label={T(item.labelKey)}
-              active={activeNav === item.path || (item.path === '/' && location.pathname === '/')}
+              active={activeNav === item.path}
               onClick={() => navigate(item.path)}
             />
           ))}
