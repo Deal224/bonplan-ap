@@ -4,6 +4,7 @@ import { AppProvider, useApp } from './lib/store';
 import { ToastProvider } from './components/ui/Toast';
 import { Layout } from './components/Layout';
 import AuthPage from './pages/AuthPage';
+import OnboardingPage from './pages/OnboardingPage';
 import Dashboard from './pages/Dashboard';
 import NewObjective from './pages/NewObjective';
 import ObjectiveDetail from './pages/ObjectiveDetail';
@@ -34,12 +35,22 @@ function AuthGuard({ children }) {
 function AppRoutes() {
   const { state } = useApp();
 
+  const onboarded = localStorage.getItem('bonplan_onboarded');
+
   return (
     <BrowserRouter>
       <Routes>
         <Route
+          path="/onboarding"
+          element={state.token ? <Navigate to="/" replace /> : <OnboardingPage />}
+        />
+        <Route
           path="/auth"
-          element={state.token ? <Navigate to="/" replace /> : <AuthPage />}
+          element={
+            state.token ? <Navigate to="/" replace /> :
+            !onboarded ? <Navigate to="/onboarding" replace /> :
+            <AuthPage />
+          }
         />
         <Route
           path="/*"
