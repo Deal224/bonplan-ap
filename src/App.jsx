@@ -15,6 +15,7 @@ import Profile from './pages/Profile';
 import Cercles from './pages/Cercles';
 import CercleDetail from './pages/CercleDetail';
 import { api } from './lib/api';
+import { initOneSignal } from './lib/oneSignal';
 
 function HomeRoute() {
   const { state } = useApp();
@@ -88,6 +89,10 @@ function AppRoutes() {
 }
 
 export default function App() {
+  useEffect(() => {
+    initOneSignal(import.meta.env.VITE_ONESIGNAL_APP_ID);
+  }, []);
+
   return (
     <AppProvider>
       <ToastProvider>

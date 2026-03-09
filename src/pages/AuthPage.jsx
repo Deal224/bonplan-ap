@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../lib/api';
 import { useApp } from '../lib/store';
 import { useLang } from '../lib/i18n';
+import { setExternalId } from '../lib/oneSignal';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { PinInput } from '../components/ui/PinInput';
@@ -33,6 +34,7 @@ export default function AuthPage() {
         ? await api.login({ phone: form.phone, pin: form.pin })
         : await api.register({ phone: form.phone, pin: form.pin, name: form.name });
       dispatch({ type: 'SET_AUTH', token: res.token, user: res.user });
+      setExternalId(res.user.id);
       if (mode === 'login') {
         toast.success('Bienvenue ! 👋');
       } else if (res.pending_invites_count > 0) {
