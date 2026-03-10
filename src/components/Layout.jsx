@@ -62,9 +62,18 @@ function NotificationsBell() {
 
   async function loadNotifs() {
     try {
+      console.log('[NOTIFS] Polling GET /api/notifications...');
       const res = await api.getNotifications();
-      setNotifs(res.notifications || []);
-    } catch (e) {}
+      const all = res.notifications || [];
+      console.log(`[NOTIFS] ${all.length} notifications reçues:`, all.map(n => ({ id: n.id, type: n.type, read: n.read, tontine_id: n.tontine_id })));
+      const invites = all.filter(n => n.type === 'circle_invite' && !n.read);
+      if (invites.length > 0) {
+        console.log(`[NOTIFS] ${invites.length} invitation(s) circle_invite non lue(s) → boutons Accepter/Refuser doivent être rendus`, invites.map(n => n.id));
+      }
+      setNotifs(all);
+    } catch (e) {
+      console.error('[NOTIFS] Erreur polling:', e);
+    }
   }
 
   async function markRead(id) {
@@ -172,6 +181,7 @@ function NotificationsBell() {
                       </p>
                       {n.type === 'circle_invite' && !n.read && (
                         <div className="flex gap-2 mt-2">
+                          {console.log(`[NOTIFS] Rendu boutons Accepter/Refuser pour notif id=${n.id} tontine_id=${n.tontine_id}`)}
                           <button onClick={() => handleAcceptInvite(n)}
                             className="text-xs bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-lg font-semibold hover:bg-emerald-200 cursor-pointer">
                             ✓ Rejoindre
